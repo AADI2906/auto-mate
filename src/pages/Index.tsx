@@ -136,27 +136,27 @@ const Index = () => {
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
       <header className="border-b border-border/50 bg-background/80 backdrop-blur sticky top-0 z-50">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between px-4 lg:px-6 py-4">
+          <div className="flex items-center gap-2 lg:gap-4 min-w-0">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="lg:hidden"
+              className="lg:hidden flex-shrink-0"
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
                 <Shield className="h-5 w-5 text-primary-foreground" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold">NeuroSecure</h1>
-                <p className="text-xs text-muted-foreground">
+              <div className="min-w-0">
+                <h1 className="text-lg lg:text-xl font-bold">NeuroSecure</h1>
+                <p className="text-xs text-muted-foreground hidden sm:block">
                   AI-Powered Security Operations Platform
                 </p>
                 {activeIncident && (
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex flex-wrap items-center gap-1 lg:gap-2 mt-1">
                     <Badge variant="outline" className="text-xs">
                       Active: {activeIncident.id}
                     </Badge>
