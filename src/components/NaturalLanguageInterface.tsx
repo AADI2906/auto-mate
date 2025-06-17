@@ -24,13 +24,8 @@ import {
   Loader2,
   Lightbulb,
   Search,
-  History,
-  Bookmark,
-  Share,
-  Download,
   Settings,
   Mic,
-  MicOff,
 } from "lucide-react";
 
 interface NaturalLanguageInterfaceProps {
@@ -247,11 +242,15 @@ export const NaturalLanguageInterface: React.FC<
 
   const handleVoiceInput = () => {
     // Check browser compatibility first
-    if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
+    if (
+      !("webkitSpeechRecognition" in window) &&
+      !("SpeechRecognition" in window)
+    ) {
       const message: ConversationMessage = {
         id: `voice-unsupported-${Date.now()}`,
         type: "system",
-        content: "❌ Voice input not supported in this browser. Please use Chrome, Edge, or Safari, or type your query manually.",
+        content:
+          "❌ Voice input not supported in this browser. Please use Chrome, Edge, or Safari, or type your query manually.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, message]);
@@ -264,7 +263,8 @@ export const NaturalLanguageInterface: React.FC<
       const message: ConversationMessage = {
         id: `voice-offline-${Date.now()}`,
         type: "system",
-        content: "❌ Voice input requires internet connection. Please check your network or type your query manually.",
+        content:
+          "❌ Voice input requires internet connection. Please check your network or type your query manually.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, message]);
@@ -272,7 +272,9 @@ export const NaturalLanguageInterface: React.FC<
       return;
     }
 
-    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    const SpeechRecognition =
+      (window as any).webkitSpeechRecognition ||
+      (window as any).SpeechRecognition;
     const recognition = new SpeechRecognition();
 
     // Configure recognition
@@ -301,13 +303,16 @@ export const NaturalLanguageInterface: React.FC<
       let errorMessage = "";
       switch (event.error) {
         case "network":
-          errorMessage = "❌ Network error: Voice recognition service unavailable. Please check your internet connection and try again, or type your query manually.";
+          errorMessage =
+            "❌ Network error: Voice recognition service unavailable. Please check your internet connection and try again, or type your query manually.";
           break;
         case "not-allowed":
-          errorMessage = "❌ Microphone access denied. Please allow microphone access in browser settings, or type your query manually.";
+          errorMessage =
+            "❌ Microphone access denied. Please allow microphone access in browser settings, or type your query manually.";
           break;
         case "no-speech":
-          errorMessage = "❌ No speech detected. Please try again or type your query manually.";
+          errorMessage =
+            "❌ No speech detected. Please try again or type your query manually.";
           break;
         default:
           errorMessage = `❌ Voice input error: ${event.error}. Please type your query manually.`;
@@ -345,7 +350,8 @@ export const NaturalLanguageInterface: React.FC<
       const message: ConversationMessage = {
         id: `voice-failed-${Date.now()}`,
         type: "system",
-        content: "❌ Failed to start voice recognition. Please type your query manually.",
+        content:
+          "❌ Failed to start voice recognition. Please type your query manually.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, message]);
@@ -393,7 +399,6 @@ export const NaturalLanguageInterface: React.FC<
               <Lightbulb className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Remediation</span>
             </Button>
-            {/* Mobile menu for smaller screens */}
             <div className="flex sm:hidden gap-1">
               <Button
                 variant="ghost"
@@ -571,32 +576,15 @@ export const NaturalLanguageInterface: React.FC<
                           ? "text-red-400 bg-red-400/10 animate-pulse"
                           : "text-muted-foreground hover:text-primary"
                       }`}
-                      title={isListening ? "Listening..." : "Click to use voice input"}
+                      title={
+                        isListening
+                          ? "Listening..."
+                          : "Click to use voice input"
+                      }
                     >
-                      {isListening ? (
-                        <div className="relative">
-                          <Mic className="h-4 w-4" />
-                          <div className="absolute inset-0 animate-ping">
-                            <Mic className="h-4 w-4 opacity-30" />
-                          </div>
-                        </div>
-                      ) : (
-                        <Mic className="h-4 w-4" />
-                      )}
+                      <Mic className="h-4 w-4" />
                     </Button>
                   </div>
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={!currentInput.trim() || isProcessing}
-                    size="sm"
-                  >
-                    {isProcessing ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
                   <Button
                     onClick={handleSendMessage}
                     disabled={!currentInput.trim() || isProcessing}
@@ -635,18 +623,20 @@ export const NaturalLanguageInterface: React.FC<
                     <DynamicIncidentDashboard
                       context={activeContext}
                       onRefresh={async () => {
-                        // Re-run investigation with fresh data
                         setIsProcessing(true);
                         try {
-                          const refreshedContext = await AgentOrchestrator.orchestrateInvestigation(activeContext.query);
+                          const refreshedContext =
+                            await AgentOrchestrator.orchestrateInvestigation(
+                              activeContext.query,
+                            );
                           setActiveContext(refreshedContext);
                           onContextChange?.(refreshedContext);
 
-                          // Add refresh message
                           const refreshMessage: ConversationMessage = {
                             id: `refresh-${Date.now()}`,
                             type: "system",
-                            content: "🔄 Context refreshed with latest telemetry data. Updated analysis available.",
+                            content:
+                              "🔄 Context refreshed with latest telemetry data. Updated analysis available.",
                             timestamp: new Date(),
                           };
                           setMessages((prev) => [...prev, refreshMessage]);
