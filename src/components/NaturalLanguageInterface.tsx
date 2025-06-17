@@ -247,7 +247,9 @@ export const NaturalLanguageInterface: React.FC<
 
   const handleVoiceInput = () => {
     if (!("webkitSpeechRecognition" in window)) {
-      alert("Speech recognition not supported in this browser");
+      alert(
+        "Speech recognition not supported in this browser. Try Chrome or Edge for voice input.",
+      );
       return;
     }
 
@@ -256,16 +258,54 @@ export const NaturalLanguageInterface: React.FC<
     recognition.interimResults = false;
     recognition.lang = "en-US";
 
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
+    recognition.onstart = () => {
+      setIsListening(true);
+      console.log("Voice input started - speak now");
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      console.log("Voice input ended");
+    };
+
+    recognition.onerror = (event: any) => {
+      setIsListening(false);
+      console.error("Voice input error:", event.error);
+
+      let errorMessage = "Voice input failed";
+      switch (event.error) {
+        case "no-speech":
+          errorMessage = "No speech detected. Please try again.";
+          break;
+        case "network":
+          errorMessage = "Network error. Please check your connection.";
+          break;
+        case "not-allowed":
+          errorMessage =
+            "Microphone access denied. Please allow microphone access.";
+          break;
+        default:
+          errorMessage = `Voice input error: ${event.error}`;
+      }
+      alert(errorMessage);
+    };
 
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
       setCurrentInput(transcript);
+      console.log("Voice input result:", transcript);
+
+      // Auto-focus input field
+      inputRef.current?.focus();
     };
 
-    recognition.start();
+    try {
+      recognition.start();
+    } catch (error) {
+      console.error("Failed to start voice recognition:", error);
+      setIsListening(false);
+      alert("Failed to start voice recognition. Please try again.");
+    }
   };
 
   const suggestions = LLMQueryProcessor.generateQuerySuggestions();
