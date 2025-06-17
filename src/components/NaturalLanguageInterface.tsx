@@ -625,7 +625,8 @@ export const NaturalLanguageInterface: React.FC<
                       onKeyPress={handleKeyPress}
                       placeholder="Ask me about network issues, security incidents, or system performance..."
                       disabled={isProcessing}
-                  <div className="flex flex-wrap gap-2">
+                      className="pr-10"
+                    />
                     {suggestions.slice(0, 3).map((suggestion, index) => (
                       <Button
                         key={index}
