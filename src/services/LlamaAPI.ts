@@ -28,7 +28,7 @@ interface ParsedSolution {
 
 export class LlamaAPI {
   private static baseUrl = "http://localhost:11434";
-  private static model = "llama3.1:8b";
+  private static model = "llama3.1:8b"; // Specifically using Llama 3.1 8B model
 
   // Environment detection to avoid CORS issues
   private static isHostedEnvironment(): boolean {
@@ -884,11 +884,69 @@ Please feel free to ask me anything specific, and I'll provide detailed, helpful
     }
   }
 
+  // Verify if the specific model is available
+  static async verifyModel(): Promise<{
+    available: boolean;
+    installedModels: string[];
+    error?: string;
+  }> {
+    if (!this.canAccessLocalhost()) {
+      return {
+        available: false,
+        installedModels: [],
+        error: "Cannot access localhost from hosted environment",
+      };
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(`${this.baseUrl}/api/tags`, {
+        signal: controller.signal,
+        mode: "cors",
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const data = await response.json();
+        const installedModels = data.models?.map((m: any) => m.name) || [];
+        const hasLlama31 = installedModels.some(
+          (name: string) =>
+            name.includes("llama3.1:8b") || name.includes("llama3.1"),
+        );
+
+        return {
+          available: hasLlama31,
+          installedModels,
+          error: hasLlama31
+            ? undefined
+            : `Model ${this.model} not found. Available models: ${installedModels.join(", ")}`,
+        };
+      } else {
+        return {
+          available: false,
+          installedModels: [],
+          error: `Ollama API error: ${response.status}`,
+        };
+      }
+    } catch (error) {
+      return {
+        available: false,
+        installedModels: [],
+        error:
+          error instanceof Error ? error.message : "Failed to verify model",
+      };
+    }
+  }
+
   // Helper method for UI to show connection status
   static getConnectionInfo(): {
     canConnect: boolean;
     environment: "local" | "hosted";
     message: string;
+    model: string;
   } {
     const isHosted = this.isHostedEnvironment();
 
@@ -897,13 +955,14 @@ Please feel free to ask me anything specific, and I'll provide detailed, helpful
         canConnect: false,
         environment: "hosted",
         message: "Running in hosted environment - using simulated AI responses",
+        model: this.model,
       };
     } else {
       return {
         canConnect: true,
         environment: "local",
-        message:
-          "Local environment detected - real Llama integration available",
+        message: `Local environment detected - ${this.model} integration available`,
+        model: this.model,
       };
     }
   }

@@ -30,7 +30,7 @@ export const SimpleAIAssistant: React.FC = () => {
       type: "assistant",
       content: `🤖 **Llama 3.1:8b AI Assistant**
 
-I'm your local AI assistant powered by Llama 3.1:8b. I can help you with:
+I'm your local AI assistant powered by **Llama 3.1:8b** model. I can help you with:
 
 • **Technical Support** - Network issues, system troubleshooting, CLI commands
 • **Code Assistance** - Programming help, debugging, best practices
@@ -38,7 +38,8 @@ I'm your local AI assistant powered by Llama 3.1:8b. I can help you with:
 • **System Administration** - Server management, configuration, monitoring
 • **General Questions** - Information, explanations, guidance
 
-**Environment Status:** ${window.location.hostname === "localhost" ? "🟢 Local (Real Llama Available)" : "🟡 Hosted (Simulated Responses)"}
+**Model:** llama3.1:8b
+**Environment Status:** Checking connection...
 
 Ask me anything! I'll provide detailed, practical responses.`,
       timestamp: new Date(),
@@ -61,15 +62,69 @@ Ask me anything! I'll provide detailed, practical responses.`,
     scrollToBottom();
   }, [messages]);
 
-  // Check Llama connection status on mount
+  // Check Llama connection and model availability on mount
   useEffect(() => {
     const checkConnection = async () => {
       try {
         const { LlamaAPI } = await import("@/services/LlamaAPI");
         const connectionInfo = LlamaAPI.getConnectionInfo();
+        const modelInfo = await LlamaAPI.verifyModel();
+
         setConnectionStatus(
-          connectionInfo.canConnect ? "connected" : "disconnected",
+          connectionInfo.canConnect && modelInfo.available
+            ? "connected"
+            : "disconnected",
         );
+
+        // Update welcome message with model verification results
+        const statusMessage = connectionInfo.canConnect
+          ? modelInfo.available
+            ? `🟢 Local (${connectionInfo.model} Ready)`
+            : `🟡 Local (${connectionInfo.model} Not Found - ${modelInfo.error})`
+          : `🟡 Hosted (Simulated Responses)`;
+
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === "welcome"
+              ? {
+                  ...msg,
+                  content: msg.content.replace(
+                    "**Environment Status:** Checking connection...",
+                    `**Environment Status:** ${statusMessage}`,
+                  ),
+                }
+              : msg,
+          ),
+        );
+
+        // Add model installation help if needed
+        if (connectionInfo.canConnect && !modelInfo.available) {
+          const helpMessage: Message = {
+            id: "model-help",
+            type: "system",
+            content: `ℹ️ **Model Installation Required**
+
+The **llama3.1:8b** model is not installed. To use real Llama responses:
+
+\`\`\`bash
+# Install Llama 3.1:8b model
+ollama pull llama3.1:8b
+
+# Start Ollama server
+ollama serve
+\`\`\`
+
+${
+  modelInfo.installedModels.length > 0
+    ? `**Available models:** ${modelInfo.installedModels.join(", ")}`
+    : "**No models found** - Run the commands above to install llama3.1:8b"
+}
+
+Until then, I'll provide simulated responses.`,
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, helpMessage]);
+        }
       } catch {
         setConnectionStatus("disconnected");
       }
@@ -229,11 +284,11 @@ Please try again or rephrase your question.`,
   const getConnectionStatusText = () => {
     switch (connectionStatus) {
       case "connected":
-        return "Llama Connected";
+        return "llama3.1:8b Ready";
       case "disconnected":
         return "Simulated Mode";
       default:
-        return "Checking...";
+        return "Checking Model...";
     }
   };
 
@@ -248,9 +303,7 @@ Please try again or rephrase your question.`,
             </div>
             <div className="min-w-0">
               <h3 className="font-semibold">AI Assistant</h3>
-              <p className="text-xs text-muted-foreground">
-                Powered by Llama 3.1:8b
-              </p>
+              <p className="text-xs text-muted-foreground">llama3.1:8b Model</p>
             </div>
           </div>
 
