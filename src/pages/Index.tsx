@@ -35,6 +35,7 @@ const Index = () => {
   const [activeIncident, setActiveIncident] = useState<IncidentContext | null>(
     null,
   );
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const quickStats = [
     {
