@@ -245,64 +245,43 @@ export const NaturalLanguageInterface: React.FC<
     setAuditLog((prev) => [entry, ...prev]);
   };
 
-  const [voiceRetryCount, setVoiceRetryCount] = useState(0);
-  const [showVoiceError, setShowVoiceError] = useState(false);
-
-  const checkNetworkConnectivity = async (): Promise<boolean> => {
-    try {
-      const response = await fetch('/ping', {
-        method: 'HEAD',
-        cache: 'no-cache',
-        signal: AbortSignal.timeout(3000)
-      });
-      return response.ok;
-    } catch {
-      // Fallback check using a reliable external service
-      try {
-        await fetch('https://www.google.com/favicon.ico', {
-          mode: 'no-cors',
-          cache: 'no-cache',
-          signal: AbortSignal.timeout(3000)
-        });
-        return true;
-      } catch {
-        return navigator.onLine;
-      }
-    }
-  };
-
-  const handleVoiceInput = async () => {
-    // Reset error state
-    setShowVoiceError(false);
-
-    // Check if speech recognition is supported
+  const handleVoiceInput = () => {
+    // Check browser compatibility first
     if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
-      alert("Speech recognition not supported in this browser. Please use Chrome, Edge, or Safari for voice input, or type your query manually.");
+      const message: ConversationMessage = {
+        id: `voice-unsupported-${Date.now()}`,
+        type: "system",
+        content: "❌ Voice input not supported in this browser. Please use Chrome, Edge, or Safari, or type your query manually.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, message]);
+      inputRef.current?.focus();
       return;
     }
 
-    // Check network connectivity
-    const isOnline = await checkNetworkConnectivity();
-    if (!isOnline) {
-      alert("Voice input requires an internet connection. Please check your network and try again, or type your query manually.");
+    // Check if online
+    if (!navigator.onLine) {
+      const message: ConversationMessage = {
+        id: `voice-offline-${Date.now()}`,
+        type: "system",
+        content: "❌ Voice input requires internet connection. Please check your network or type your query manually.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, message]);
+      inputRef.current?.focus();
       return;
     }
 
     const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
     const recognition = new SpeechRecognition();
 
-    // Configure recognition with better settings
+    // Configure recognition
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.lang = "en-US";
-    recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
       setIsListening(true);
-      setVoiceRetryCount(0);
-      console.log("🎤 Voice input started - speak now");
-
-      // Add visual feedback
       const message: ConversationMessage = {
         id: `voice-start-${Date.now()}`,
         type: "system",
@@ -314,107 +293,62 @@ export const NaturalLanguageInterface: React.FC<
 
     recognition.onend = () => {
       setIsListening(false);
-      console.log("🎤 Voice input ended");
     };
 
     recognition.onerror = (event: any) => {
       setIsListening(false);
-      console.error("Voice input error:", event.error);
 
       let errorMessage = "";
-      let shouldRetry = false;
-
       switch (event.error) {
-        case "no-speech":
-          errorMessage = "No speech detected. Please try speaking again or type your query.";
-          shouldRetry = voiceRetryCount < 2;
-          break;
         case "network":
-          errorMessage = "Network connection issue detected. Voice recognition requires internet access. Please check your connection or type your query manually.";
-          shouldRetry = voiceRetryCount < 1;
+          errorMessage = "❌ Network error: Voice recognition service unavailable. Please check your internet connection and try again, or type your query manually.";
           break;
         case "not-allowed":
-          errorMessage = "Microphone access denied. Please allow microphone access in your browser settings, or type your query manually.";
+          errorMessage = "❌ Microphone access denied. Please allow microphone access in browser settings, or type your query manually.";
           break;
-        case "service-not-allowed":
-          errorMessage = "Speech recognition service not available. Please type your query manually.";
-          break;
-        case "bad-grammar":
-          errorMessage = "Speech recognition grammar error. Please try speaking more clearly or type your query.";
-          break;
-        case "language-not-supported":
-          errorMessage = "Language not supported. Please type your query manually.";
+        case "no-speech":
+          errorMessage = "❌ No speech detected. Please try again or type your query manually.";
           break;
         default:
-          errorMessage = `Voice input temporarily unavailable (${event.error}). Please type your query manually.`;
-          shouldRetry = voiceRetryCount < 1;
+          errorMessage = `❌ Voice input error: ${event.error}. Please type your query manually.`;
       }
 
-      // Add error message to chat
-      const errorChatMessage: ConversationMessage = {
+      const message: ConversationMessage = {
         id: `voice-error-${Date.now()}`,
         type: "system",
-        content: `❌ ${errorMessage}`,
+        content: errorMessage,
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, errorChatMessage]);
-
-      // Auto-retry for certain errors
-      if (shouldRetry && (event.error === "no-speech" || event.error === "network")) {
-        setTimeout(() => {
-          setVoiceRetryCount(prev => prev + 1);
-          console.log(`Retrying voice input (attempt ${voiceRetryCount + 2})`);
-          handleVoiceInput();
-        }, 1500);
-      } else {
-        setShowVoiceError(true);
-        // Focus on input field as fallback
-        inputRef.current?.focus();
-      }
+      setMessages((prev) => [...prev, message]);
+      inputRef.current?.focus();
     };
 
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
-      const confidence = event.results[0][0].confidence;
-
       setCurrentInput(transcript);
-      console.log("🎤 Voice input result:", transcript, "Confidence:", confidence);
 
-      // Add success message to chat
-      const successMessage: ConversationMessage = {
+      const message: ConversationMessage = {
         id: `voice-success-${Date.now()}`,
         type: "system",
-        content: `✅ Voice input captured: "${transcript}" (${Math.round(confidence * 100)}% confidence)`,
+        content: `✅ Voice input: "${transcript}"`,
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, successMessage]);
+      setMessages((prev) => [...prev, message]);
 
-      // Auto-focus input field and optionally auto-submit if confidence is high
       inputRef.current?.focus();
-
-      if (confidence > 0.8 && transcript.length > 10) {
-        // Auto-submit if we're confident in the transcription
-        setTimeout(() => {
-          handleSendMessage();
-        }, 500);
-      }
     };
 
     try {
       recognition.start();
     } catch (error) {
-      console.error("Failed to start voice recognition:", error);
       setIsListening(false);
-
-      const fallbackMessage: ConversationMessage = {
-        id: `voice-fallback-${Date.now()}`,
+      const message: ConversationMessage = {
+        id: `voice-failed-${Date.now()}`,
         type: "system",
-        content: "❌ Voice input failed to start. Please type your query manually.",
+        content: "❌ Failed to start voice recognition. Please type your query manually.",
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, fallbackMessage]);
-
-      // Focus on input as fallback
+      setMessages((prev) => [...prev, message]);
       inputRef.current?.focus();
     }
   };
