@@ -284,6 +284,12 @@ const Index = () => {
                 icon: TrendingUp,
                 badge: null,
               },
+              {
+                id: "system",
+                label: "System Monitor",
+                icon: Activity,
+                badge: null,
+              },
             ].map((item) => {
               const Icon = item.icon;
               return (
