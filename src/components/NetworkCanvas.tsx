@@ -426,7 +426,7 @@ export const NetworkCanvas: React.FC = () => {
           <Button variant="outline" size="sm" onClick={resetView}>
             <RotateCw className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={toggleFullscreen}>
             <Maximize2 className="h-4 w-4" />
           </Button>
         </div>
