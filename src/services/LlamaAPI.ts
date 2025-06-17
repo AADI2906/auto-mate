@@ -267,6 +267,175 @@ Always provide multiple solutions when possible, starting with the safest approa
   private static generateMockResponse(query: string): string[] {
     const queryLower = query.toLowerCase();
 
+    // Network Reset Commands
+    if (
+      queryLower.includes("network reset") ||
+      queryLower.includes("reset network") ||
+      queryLower.includes("restart network") ||
+      queryLower.includes("network restart")
+    ) {
+      return [
+        "**Complete Network Reset Procedure**\n\n",
+        "**Diagnosis:**\n",
+        "Network reset will flush all network configurations, restart services, and re-establish connections.\n\n",
+        "**Network Reset Commands (Step-by-Step):**\n\n",
+        "1. **Flush DNS cache:**\n",
+        "```bash\n",
+        "sudo systemd-resolve --flush-caches\n",
+        "sudo resolvectl flush-caches\n",
+        "```\n\n",
+        "2. **Reset network interface:**\n",
+        "```bash\n",
+        "sudo ip link set eth0 down\n",
+        "sudo ip link set eth0 up\n",
+        "sudo dhclient -r && sudo dhclient\n",
+        "```\n\n",
+        "3. **Restart network services:**\n",
+        "```bash\n",
+        "sudo systemctl restart NetworkManager\n",
+        "sudo systemctl restart networking\n",
+        "sudo systemctl restart systemd-networkd\n",
+        "```\n\n",
+        "4. **Clear ARP table:**\n",
+        "```bash\n",
+        "sudo ip neigh flush all\n",
+        "arp -d -a\n",
+        "```\n\n",
+        "5. **Reset routing table:**\n",
+        "```bash\n",
+        "sudo ip route flush table main\n",
+        "sudo systemctl restart NetworkManager\n",
+        "```\n\n",
+        "6. **Verify reset:**\n",
+        "```bash\n",
+        "ip addr show\n",
+        "ip route show\n",
+        "ping 8.8.8.8\n",
+        "nslookup google.com\n",
+        "```\n\n",
+        "**Severity:** Medium | **Category:** Network | **Risk:** Caution | **ETA:** 3-5 minutes",
+      ];
+    }
+
+    // IP Configuration Reset
+    if (
+      queryLower.includes("ip reset") ||
+      queryLower.includes("reset ip") ||
+      queryLower.includes("ip config")
+    ) {
+      return [
+        "**IP Configuration Reset**\n\n",
+        "**Diagnosis:**\n",
+        "Resetting IP configuration to resolve addressing and connectivity issues.\n\n",
+        "**IP Reset Commands:**\n\n",
+        "1. **Release current IP:**\n",
+        "```bash\n",
+        "sudo dhclient -r\n",
+        "sudo ip addr flush dev eth0\n",
+        "```\n\n",
+        "2. **Renew IP address:**\n",
+        "```bash\n",
+        "sudo dhclient eth0\n",
+        "sudo systemctl restart dhcpcd\n",
+        "```\n\n",
+        "3. **Set static IP (if needed):**\n",
+        "```bash\n",
+        "sudo ip addr add 192.168.1.100/24 dev eth0\n",
+        "sudo ip route add default via 192.168.1.1\n",
+        "```\n\n",
+        "4. **Verify IP configuration:**\n",
+        "```bash\n",
+        "ip addr show eth0\n",
+        "ip route show\n",
+        "ping -c 3 8.8.8.8\n",
+        "```\n\n",
+        "**Severity:** Low | **Category:** Network | **Risk:** Safe | **ETA:** 2-3 minutes",
+      ];
+    }
+
+    // DNS Issues
+    if (
+      queryLower.includes("dns") ||
+      queryLower.includes("domain") ||
+      queryLower.includes("resolve")
+    ) {
+      return [
+        "**DNS Resolution Issues Fix**\n\n",
+        "**Diagnosis:**\n",
+        "DNS resolution problems prevent domain name lookups and internet connectivity.\n\n",
+        "**DNS Troubleshooting Commands:**\n\n",
+        "1. **Flush DNS cache:**\n",
+        "```bash\n",
+        "sudo systemd-resolve --flush-caches\n",
+        "sudo resolvectl flush-caches\n",
+        "```\n\n",
+        "2. **Test DNS servers:**\n",
+        "```bash\n",
+        "nslookup google.com 8.8.8.8\n",
+        "dig @1.1.1.1 google.com\n",
+        "```\n\n",
+        "3. **Check DNS configuration:**\n",
+        "```bash\n",
+        "cat /etc/resolv.conf\n",
+        "systemd-resolve --status\n",
+        "```\n\n",
+        "4. **Set reliable DNS servers:**\n",
+        "```bash\n",
+        "echo 'nameserver 8.8.8.8' | sudo tee /etc/resolv.conf\n",
+        "echo 'nameserver 1.1.1.1' | sudo tee -a /etc/resolv.conf\n",
+        "```\n\n",
+        "5. **Restart DNS services:**\n",
+        "```bash\n",
+        "sudo systemctl restart systemd-resolved\n",
+        "sudo systemctl restart NetworkManager\n",
+        "```\n\n",
+        "**Severity:** Medium | **Category:** Network | **Risk:** Safe | **ETA:** 3-5 minutes",
+      ];
+    }
+
+    // Firewall Issues
+    if (
+      queryLower.includes("firewall") ||
+      queryLower.includes("blocked") ||
+      queryLower.includes("port")
+    ) {
+      return [
+        "**Firewall and Port Issues**\n\n",
+        "**Diagnosis:**\n",
+        "Firewall rules may be blocking network traffic or specific ports.\n\n",
+        "**Firewall Troubleshooting:**\n\n",
+        "1. **Check firewall status:**\n",
+        "```bash\n",
+        "sudo ufw status verbose\n",
+        "sudo iptables -L -n\n",
+        "```\n\n",
+        "2. **Test port connectivity:**\n",
+        "```bash\n",
+        "sudo netstat -tulpn | grep :80\n",
+        "sudo ss -tulpn | grep :443\n",
+        "nc -zv target-server 80\n",
+        "```\n\n",
+        "3. **Temporarily disable firewall (testing only):**\n",
+        "```bash\n",
+        "sudo ufw disable\n",
+        "sudo systemctl stop iptables\n",
+        "```\n\n",
+        "4. **Allow specific ports:**\n",
+        "```bash\n",
+        "sudo ufw allow 80/tcp\n",
+        "sudo ufw allow 443/tcp\n",
+        "sudo ufw allow ssh\n",
+        "```\n\n",
+        "5. **Re-enable firewall:**\n",
+        "```bash\n",
+        "sudo ufw enable\n",
+        "sudo systemctl start iptables\n",
+        "```\n\n",
+        "**Severity:** High | **Category:** Security | **Risk:** Caution | **ETA:** 5-10 minutes",
+      ];
+    }
+
+    // VPN Issues
     if (queryLower.includes("vpn")) {
       return [
         "**VPN Connection Issue Diagnosis**\n\n",
@@ -302,7 +471,12 @@ Always provide multiple solutions when possible, starting with the safest approa
       ];
     }
 
-    if (queryLower.includes("slow") || queryLower.includes("performance")) {
+    // Performance Issues
+    if (
+      queryLower.includes("slow") ||
+      queryLower.includes("performance") ||
+      queryLower.includes("lag")
+    ) {
       return [
         "**Network Performance Issue Analysis**\n\n",
         "**Diagnosis:**\n",
@@ -335,7 +509,12 @@ Always provide multiple solutions when possible, starting with the safest approa
       ];
     }
 
-    if (queryLower.includes("auth") || queryLower.includes("login")) {
+    // Authentication Issues
+    if (
+      queryLower.includes("auth") ||
+      queryLower.includes("login") ||
+      queryLower.includes("password")
+    ) {
       return [
         "**Authentication Issue Resolution**\n\n",
         "**Diagnosis:**\n",
@@ -366,30 +545,83 @@ Always provide multiple solutions when possible, starting with the safest approa
       ];
     }
 
+    // WiFi Issues
+    if (
+      queryLower.includes("wifi") ||
+      queryLower.includes("wireless") ||
+      queryLower.includes("wlan")
+    ) {
+      return [
+        "**WiFi Connection Troubleshooting**\n\n",
+        "**Diagnosis:**\n",
+        "WiFi connectivity issues require checking wireless adapter, drivers, and connection settings.\n\n",
+        "**WiFi Diagnostic Commands:**\n\n",
+        "1. **Check wireless interface:**\n",
+        "```bash\n",
+        "iwconfig\n",
+        "ip link show\n",
+        "lspci | grep -i wireless\n",
+        "```\n\n",
+        "2. **Scan for networks:**\n",
+        "```bash\n",
+        "sudo iwlist scan | grep ESSID\n",
+        "nmcli dev wifi list\n",
+        "```\n\n",
+        "3. **Restart wireless services:**\n",
+        "```bash\n",
+        "sudo systemctl restart NetworkManager\n",
+        "sudo modprobe -r iwlwifi && sudo modprobe iwlwifi\n",
+        "```\n\n",
+        "4. **Connect to WiFi:**\n",
+        "```bash\n",
+        "nmcli dev wifi connect 'SSID' password 'password'\n",
+        "sudo wpa_supplicant -B -i wlan0 -c /etc/wpa_supplicant.conf\n",
+        "```\n\n",
+        "5. **Check connection status:**\n",
+        "```bash\n",
+        "iwconfig wlan0\n",
+        "ping -c 3 8.8.8.8\n",
+        "```\n\n",
+        "**Severity:** Medium | **Category:** Network | **Risk:** Safe | **ETA:** 5-8 minutes",
+      ];
+    }
+
     // Default response for other queries
     return [
-      "**General IT Issue Analysis**\n\n",
+      "**General Network Diagnostic Analysis**\n\n",
       "**Initial Diagnosis:**\n",
-      "Based on your query, I'll provide general troubleshooting steps.\n\n",
-      "**Basic Diagnostic Commands:**\n\n",
-      "1. **System status check:**\n",
-      "```bash\n",
-      "systemctl status\n",
-      "uptime\n",
-      "df -h\n",
-      "```\n\n",
-      "2. **Network connectivity:**\n",
+      "I'll provide comprehensive network troubleshooting steps for your query.\n\n",
+      "**Essential Network Commands:**\n\n",
+      "1. **Network interface status:**\n",
       "```bash\n",
       "ip addr show\n",
-      "ip route show\n",
-      "ping 8.8.8.8\n",
+      "ip link show\n",
+      "ifconfig -a\n",
       "```\n\n",
-      "3. **Log analysis:**\n",
+      "2. **Connectivity testing:**\n",
       "```bash\n",
-      "sudo journalctl -xe\n",
-      "sudo dmesg | tail\n",
+      "ping -c 5 8.8.8.8\n",
+      "ping -c 5 google.com\n",
+      "traceroute 8.8.8.8\n",
       "```\n\n",
-      "**Severity:** Medium | **Category:** System | **Risk:** Safe | **ETA:** 5-15 minutes",
+      "3. **DNS and routing:**\n",
+      "```bash\n",
+      "nslookup google.com\n",
+      "ip route show\n",
+      "cat /etc/resolv.conf\n",
+      "```\n\n",
+      "4. **Port and service checking:**\n",
+      "```bash\n",
+      "netstat -tulpn\n",
+      "ss -tulpn\n",
+      "systemctl status NetworkManager\n",
+      "```\n\n",
+      "5. **Network logs:**\n",
+      "```bash\n",
+      "sudo journalctl -u NetworkManager -f\n",
+      "dmesg | grep -i network\n",
+      "```\n\n",
+      "**Severity:** Medium | **Category:** Network | **Risk:** Safe | **ETA:** 5-10 minutes",
     ];
   }
 
