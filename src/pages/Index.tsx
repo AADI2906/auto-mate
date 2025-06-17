@@ -292,7 +292,7 @@ const Index = () => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-hidden">
+        <main className="flex-1 min-w-0 overflow-hidden">
           {activeView === "chat" && (
             <div className="h-full">
               <NaturalLanguageInterface onContextChange={setActiveIncident} />
