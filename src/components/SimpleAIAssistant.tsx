@@ -161,8 +161,22 @@ Until then, I'll provide simulated responses.`,
       // Import and use LlamaAPI
       const { LlamaAPI } = await import("@/services/LlamaAPI");
 
-      console.log("Sending query to LlamaAPI:", originalQuery);
+      console.log("Starting two-step Llama process for query:", originalQuery);
       let responseReceived = false;
+
+      // Add system message about the two-step process
+      const processMessage: Message = {
+        id: `process-${Date.now()}`,
+        type: "system",
+        content: `🔄 **Processing Query** (Two-step Llama process)
+
+Step 1: Sending instruction prompt...
+Step 2: Processing your query: "${originalQuery}"
+
+Please wait while I get the response...`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, processMessage]);
 
       const result = await LlamaAPI.sendQuery(
         originalQuery,
@@ -180,15 +194,17 @@ Until then, I'll provide simulated responses.`,
         // onComplete callback
         (fullResponse: string, parsedSolution) => {
           setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === streamingMessageId
-                ? {
-                    ...msg,
-                    content: fullResponse,
-                    isFromLlama: result?.isFromLlama ?? false,
-                  }
-                : msg,
-            ),
+            prev
+              .filter((msg) => !msg.id.startsWith("process-")) // Remove process message
+              .map((msg) =>
+                msg.id === streamingMessageId
+                  ? {
+                      ...msg,
+                      content: fullResponse,
+                      isFromLlama: result?.isFromLlama ?? false,
+                    }
+                  : msg,
+              ),
           );
         },
         // onError callback

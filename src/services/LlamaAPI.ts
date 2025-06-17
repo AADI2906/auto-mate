@@ -49,22 +49,8 @@ export class LlamaAPI {
     return !this.isHostedEnvironment();
   }
 
-  // General AI assistant system prompt
-  private static systemPrompt = `You are a helpful AI assistant powered by Llama 3.1. You provide clear, accurate, and helpful responses to any questions.
-
-For technical questions, provide:
-- Clear explanations
-- Practical solutions
-- Code examples when relevant
-- Step-by-step instructions when appropriate
-
-For CLI/technical requests, format like this:
-\`\`\`bash
-command1
-command2
-\`\`\`
-
-Be conversational, helpful, and informative. Adapt your response style to the question type.`;
+  // Simplified system prompt since we use instruction-based filtering
+  private static systemPrompt = `You are a helpful AI assistant. Provide clear, accurate, and helpful responses.`;
 
   static async isAvailable(): Promise<{ available: boolean; error?: string }> {
     // Skip fetch entirely in hosted environments to avoid CORS errors
@@ -142,69 +128,25 @@ Be conversational, helpful, and informative. Adapt your response style to the qu
       return { ...result, isFromLlama: false, error: availabilityCheck.error };
     }
 
-    const request: LlamaRequest = {
-      model: this.model,
-      prompt: query,
-      stream: true,
-      system: this.systemPrompt,
-      temperature: 0.7,
-      top_p: 0.9,
-      max_tokens: 2000,
-    };
-
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for generation
+      // **Step 1: Send instruction prompt first**
+      const instructionPrompt =
+        "I'll give u a sentence and if u find words hell and shit in the sentence, return request cant be processed else respond normally, now judge the sentence that i'll provide";
 
-      const response = await fetch(`${this.baseUrl}/api/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(request),
-        signal: controller.signal,
-        mode: "cors",
-      });
+      console.log("Step 1: Sending instruction prompt...");
+      const instructionResponse = await this.chatWithLlama(instructionPrompt);
+      console.log("Instruction Response:", instructionResponse);
 
-      clearTimeout(timeoutId);
+      // **Step 2: Wait briefly and then send actual sentence**
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second delay
 
-      if (!response.ok) {
-        throw new Error(
-          `Llama API error: ${response.status} ${response.statusText}`,
-        );
-      }
+      console.log("Step 2: Sending actual query...");
+      const finalResponse = await this.chatWithLlama(query, onStream);
 
-      let fullResponse = "";
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
+      const solution = this.parseSolution(finalResponse, query);
+      onComplete?.(finalResponse, solution);
 
-      if (reader) {
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value);
-          const lines = chunk.split("\n").filter((line) => line.trim());
-
-          for (const line of lines) {
-            try {
-              const parsed: LlamaResponse = JSON.parse(line);
-              if (parsed.content) {
-                fullResponse += parsed.content;
-                onStream?.(parsed.content);
-              }
-              if (parsed.done) {
-                break;
-              }
-            } catch (e) {
-              // Skip invalid JSON lines
-            }
-          }
-        }
-      }
-
-      const solution = this.parseSolution(fullResponse, query);
-      onComplete?.(fullResponse, solution);
-
-      return { response: fullResponse, solution, isFromLlama: true };
+      return { response: finalResponse, solution, isFromLlama: true };
     } catch (error) {
       let errorMessage = "Unknown error";
 
@@ -229,6 +171,76 @@ Be conversational, helpful, and informative. Adapt your response style to the qu
       const result = await this.mockResponse(query, onStream, onComplete);
       return { ...result, isFromLlama: false, error: errorMessage };
     }
+  }
+
+  // Private method that mimics the Python chat_with_llama function
+  private static async chatWithLlama(
+    prompt: string,
+    onStream?: (chunk: string) => void,
+  ): Promise<string> {
+    const request: LlamaRequest = {
+      model: this.model,
+      prompt: prompt,
+      stream: true,
+      temperature: 0.7,
+      top_p: 0.9,
+      max_tokens: 2000,
+    };
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+    const response = await fetch(`${this.baseUrl}/api/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+      signal: controller.signal,
+      mode: "cors",
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(
+        `Llama API error: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    let fullResponse = "";
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+
+    if (reader) {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n").filter((line) => line.trim());
+
+        for (const line of lines) {
+          try {
+            const jsonData = JSON.parse(line);
+            const responseChunk = jsonData.response || "";
+            if (responseChunk) {
+              fullResponse += responseChunk;
+              // Only stream for the actual user query, not the instruction
+              if (onStream) {
+                onStream(responseChunk);
+              }
+            }
+            if (jsonData.done) {
+              break;
+            }
+          } catch (e) {
+            // Skip invalid JSON lines
+            continue;
+          }
+        }
+      }
+    }
+
+    return fullResponse.trim(); // Return cleaned response
   }
 
   private static async mockResponse(
