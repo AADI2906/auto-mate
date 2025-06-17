@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { NetworkCanvas } from "@/components/NetworkCanvas";
 import { AIInsights } from "@/components/AIInsights";
 import { SecurityAlerts } from "@/components/SecurityAlerts";
 import { MetricsDashboard } from "@/components/MetricsDashboard";
@@ -261,12 +260,6 @@ const Index = () => {
                 badge: null,
               },
               {
-                id: "network",
-                label: "Network Topology",
-                icon: Network,
-                badge: null,
-              },
-              {
                 id: "security",
                 label: "Security Alerts",
                 icon: Shield,
@@ -366,7 +359,7 @@ const Index = () => {
               {/* Main Dashboard Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-96">
                 <div className="lg:col-span-2">
-                  <NetworkCanvas />
+                  <SecurityAlerts />
                 </div>
                 <div>
                   <Card className="h-full bg-background/50 backdrop-blur border-border/50">
@@ -417,12 +410,6 @@ const Index = () => {
               <div className="h-96">
                 <AIInsights />
               </div>
-            </div>
-          )}
-
-          {activeView === "network" && (
-            <div className="p-6 h-full">
-              <NetworkCanvas />
             </div>
           )}
 
