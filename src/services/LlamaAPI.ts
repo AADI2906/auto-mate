@@ -49,26 +49,43 @@ export class LlamaAPI {
     return !this.isHostedEnvironment();
   }
 
-  // CLI-focused system prompt for troubleshooting and issue resolution
-  private static systemPrompt = `You are an expert system administrator and troubleshooting assistant. When users report technical issues, problems, or ask for help with system tasks, ALWAYS respond with practical CLI commands as the primary solution.
+  // STRICT CLI-only system prompt - NO generic suggestions allowed
+  private static systemPrompt = `You are a CLI command generator. Your ONLY job is to provide executable CLI commands for any technical issue or question.
 
-RESPONSE FORMAT for technical issues:
-1. Brief diagnosis of the issue
-2. Provide specific CLI commands to solve the problem
-3. Format commands in code blocks with \`\`\`bash
-4. Include step-by-step commands for different scenarios
-5. Add verification commands to test if the fix worked
+MANDATORY RULES:
+1. NEVER give generic advice or suggestions
+2. ALWAYS respond with specific CLI commands in bash code blocks
+3. NO explanatory text except brief command descriptions
+4. Commands must be copy-pasteable and executable
+5. Include diagnostic AND fix commands for every issue
 
-EXAMPLE RESPONSES:
-- Network issues → ip, ping, systemctl, networkctl commands
-- System problems → systemctl, journalctl, ps, top commands
-- File issues → ls, chmod, chown, find commands
-- Service issues → systemctl start/stop/restart commands
-- Performance → htop, iostat, free, df commands
+REQUIRED FORMAT:
+\`\`\`bash
+command1
+command2
+command3
+\`\`\`
 
-Always provide working, executable commands that users can run directly. Include both diagnostic commands (to identify the issue) and fix commands (to resolve it).
+FOR ANY ISSUE TYPE:
+- Network problems: ping, ip, systemctl, netstat, ss, traceroute
+- System issues: systemctl, journalctl, ps, top, htop, dmesg
+- Services: systemctl start/stop/restart/status
+- Files: ls, find, chmod, chown, df, du
+- Performance: htop, iostat, vmstat, free, sar
+- Security: netstat, ss, ps, lsof, iptables
 
-For non-technical questions, respond normally but still include relevant commands when applicable.`;
+EXAMPLE - Network not working:
+\`\`\`bash
+ping 8.8.8.8
+ip addr show
+systemctl status NetworkManager
+systemctl restart NetworkManager
+sudo dhclient -r
+sudo dhclient
+ip route show
+\`\`\`
+
+NO GENERIC TEXT. ONLY EXECUTABLE COMMANDS.`;
 
   static async isAvailable(): Promise<{ available: boolean; error?: string }> {
     // Skip fetch entirely in hosted environments to avoid CORS errors
@@ -149,7 +166,7 @@ For non-technical questions, respond normally but still include relevant command
     try {
       // **Step 1: Send instruction prompt first**
       const instructionPrompt =
-        "I'll give u a sentence and if u find words hell and shit in the sentence, return request cant be processed else respond normally, now judge the sentence that i'll provide";
+        "You are a CLI command generator. For any technical issue, you MUST respond with executable CLI commands in bash code blocks. NO generic advice. NO explanations. ONLY commands. If user asks about network, system, or any technical issue, respond with specific commands they can run. Ready?";
 
       console.log("Step 1: Sending instruction prompt...");
       const instructionResponse = await this.chatWithLlama(instructionPrompt);
@@ -297,64 +314,163 @@ For non-technical questions, respond normally but still include relevant command
   private static generateSimpleResponse(query: string): string {
     const queryLower = query.toLowerCase();
 
-    if (queryLower.includes("hello") || queryLower.includes("hi")) {
-      return "Hello! I'm your AI assistant. I can help with technical questions, programming, system administration, and general inquiries. What would you like to know?";
-    }
-
-    if (queryLower.includes("network") || queryLower.includes("connection")) {
-      return `I can help with network issues! For "${query}", here are some common solutions:
+    // Network-related issues
+    if (
+      queryLower.includes("network") ||
+      queryLower.includes("connection") ||
+      queryLower.includes("internet") ||
+      queryLower.includes("wifi") ||
+      queryLower.includes("ethernet")
+    ) {
+      return `Network troubleshooting commands for "${query}":
 
 \`\`\`bash
+ping 8.8.8.8
 ping google.com
 ip addr show
+ip route show
+systemctl status NetworkManager
 systemctl restart NetworkManager
-\`\`\`
-
-These commands will help diagnose and fix common network problems. Would you like more specific help?`;
+sudo dhclient -r
+sudo dhclient
+netstat -tuln
+ss -tuln
+traceroute 8.8.8.8
+nslookup google.com
+sudo systemctl restart systemd-resolved
+\`\`\``;
     }
 
+    // System/performance issues
     if (
-      queryLower.includes("code") ||
-      queryLower.includes("programming") ||
-      queryLower.includes("python") ||
-      queryLower.includes("javascript")
+      queryLower.includes("slow") ||
+      queryLower.includes("performance") ||
+      queryLower.includes("cpu") ||
+      queryLower.includes("memory") ||
+      queryLower.includes("disk")
     ) {
-      return `I'd be happy to help with coding! For your question about "${query}", I can provide:
+      return `System performance diagnostic commands:
 
-• Code examples and explanations
-• Debugging assistance
-• Best practices and optimization tips
-• Library and framework recommendations
-
-What specific programming challenge can I help you solve?`;
+\`\`\`bash
+htop
+top
+ps aux --sort=-%cpu | head -10
+free -h
+df -h
+iostat -x 1 5
+vmstat 1 5
+systemctl --failed
+journalctl -xe
+dmesg | tail -20
+\`\`\``;
     }
 
+    // Service/process issues
+    if (
+      queryLower.includes("service") ||
+      queryLower.includes("restart") ||
+      queryLower.includes("start") ||
+      queryLower.includes("stop") ||
+      queryLower.includes("daemon")
+    ) {
+      return `Service management commands:
+
+\`\`\`bash
+systemctl --failed
+systemctl list-units --failed
+systemctl status service-name
+systemctl restart service-name
+systemctl enable service-name
+systemctl disable service-name
+journalctl -u service-name -f
+ps aux | grep service-name
+\`\`\``;
+    }
+
+    // Error/troubleshooting
     if (
       queryLower.includes("error") ||
       queryLower.includes("bug") ||
-      queryLower.includes("fix")
+      queryLower.includes("fix") ||
+      queryLower.includes("troubleshoot") ||
+      queryLower.includes("problem")
     ) {
-      return `I can help debug that issue! For "${query}", try these troubleshooting steps:
+      return `General troubleshooting commands:
 
-1. Check the error logs: \`journalctl -xe\`
-2. Verify service status: \`systemctl status service-name\`
-3. Review configuration files
-4. Test with minimal reproduction case
-
-Can you share more details about the specific error you're seeing?`;
+\`\`\`bash
+journalctl -xe
+dmesg | tail -20
+systemctl --failed
+ps aux
+netstat -tuln
+lsof -i
+tail -f /var/log/syslog
+systemctl status
+uptime
+uname -a
+\`\`\``;
     }
 
-    // Default response
-    return `Thanks for your question: "${query}"
+    // File/directory issues
+    if (
+      queryLower.includes("file") ||
+      queryLower.includes("directory") ||
+      queryLower.includes("permission") ||
+      queryLower.includes("access")
+    ) {
+      return `File system diagnostic commands:
 
-I'm an AI assistant that can help with:
-• Technical support and troubleshooting
-• Programming and development questions
-• System administration tasks
-• Security and networking guidance
-• General information and explanations
+\`\`\`bash
+ls -la
+pwd
+df -h
+du -sh *
+find / -name "filename" 2>/dev/null
+chmod 755 filename
+chown user:group filename
+stat filename
+lsof | grep filename
+\`\`\``;
+    }
 
-Please feel free to ask me anything specific, and I'll provide detailed, helpful responses!`;
+    // Security-related
+    if (
+      queryLower.includes("security") ||
+      queryLower.includes("firewall") ||
+      queryLower.includes("port") ||
+      queryLower.includes("blocked")
+    ) {
+      return `Security diagnostic commands:
+
+\`\`\`bash
+sudo ufw status
+sudo iptables -L -n
+netstat -tuln
+ss -tuln
+lsof -i
+ps aux
+who
+last
+sudo journalctl -u ssh
+nmap localhost
+\`\`\``;
+    }
+
+    // Default technical response - always includes commands
+    return `Diagnostic commands for "${query}":
+
+\`\`\`bash
+systemctl status
+ps aux
+netstat -tuln
+df -h
+free -h
+uptime
+journalctl -xe
+dmesg | tail
+ip addr show
+ping 8.8.8.8
+\`\`\``;
   }
 
   private static generateMockResponse(query: string): string[] {
@@ -744,7 +860,7 @@ Please feel free to ask me anything specific, and I'll provide detailed, helpful
     const explanationLines = response.split("\n").filter((line) => {
       const trimmed = line.trim();
       return (
-        trimmed.match(/^(\d+\.|[•\-\*]|\*\*\d+\.|\*\*[•\-\*])\s+/) ||
+        trimmed.match(/^(\d+\.|[��\-\*]|\*\*\d+\.|\*\*[•\-\*])\s+/) ||
         (trimmed.startsWith("**EXPLANATIONS:**") === false &&
           trimmed.length > 10 &&
           !trimmed.startsWith("```") &&

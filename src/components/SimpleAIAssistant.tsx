@@ -342,8 +342,29 @@ Please try again or rephrase your question.`,
   const renderMessageContent = (message: Message) => {
     const cliCommands = extractCLICommands(message.content);
 
+    if (cliCommands.length === 0 && message.type === "assistant") {
+      // No CLI commands found in assistant message - this shouldn't happen for technical queries
+      return (
+        <div className="space-y-3">
+          <div className="whitespace-pre-wrap text-sm leading-relaxed">
+            {message.content}
+          </div>
+          <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+            <div className="flex items-center gap-2 text-yellow-400 text-sm">
+              <Terminal className="h-4 w-4" />
+              <span className="font-medium">No CLI commands detected</span>
+            </div>
+            <p className="text-xs text-yellow-400/80 mt-1">
+              For technical issues, try asking more specifically (e.g., "My
+              network is not working", "Apache server won't start")
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     if (cliCommands.length === 0) {
-      // No CLI commands, render normally
+      // Non-assistant message or no commands needed
       return (
         <div className="whitespace-pre-wrap text-sm leading-relaxed">
           {message.content}
@@ -358,13 +379,15 @@ Please try again or rephrase your question.`,
 
     return (
       <div className="space-y-3">
-        <div className="whitespace-pre-wrap text-sm leading-relaxed">
-          {contentWithoutCodeBlocks}
-        </div>
+        {contentWithoutCodeBlocks && (
+          <div className="whitespace-pre-wrap text-sm leading-relaxed">
+            {contentWithoutCodeBlocks}
+          </div>
+        )}
 
         <CLICommandBlock
           commands={cliCommands}
-          title="Suggested CLI Commands"
+          title="🔧 Executable Solutions"
           description="Click the run button to execute commands in your terminal"
         />
       </div>
@@ -578,7 +601,7 @@ I'll provide specific CLI commands you can run instantly! 🚀`,
                 value={currentInput}
                 onChange={(e) => setCurrentInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Ask me anything about tech, coding, security, or administration..."
+                placeholder="Try: 'network not working', 'server is slow', 'service won't start'..."
                 disabled={isProcessing}
                 className="pr-4"
               />
@@ -597,12 +620,34 @@ I'll provide specific CLI commands you can run instantly! 🚀`,
             </Button>
           </div>
 
-          <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-            <span>Press Enter to send, Shift+Enter for new line</span>
-            <span className="flex items-center gap-1">
-              <CheckCircle className="h-3 w-3" />
-              Ready
-            </span>
+          <div className="mt-2 space-y-2">
+            <div className="flex flex-wrap gap-1">
+              {[
+                "Network not working",
+                "Server is slow",
+                "Service won't start",
+                "Can't connect to SSH",
+                "Disk space full",
+              ].map((suggestion, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentInput(suggestion)}
+                  className="h-6 px-2 text-xs"
+                  disabled={isProcessing}
+                >
+                  {suggestion}
+                </Button>
+              ))}
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Press Enter to send, Shift+Enter for new line</span>
+              <span className="flex items-center gap-1">
+                <CheckCircle className="h-3 w-3" />
+                Ready
+              </span>
+            </div>
           </div>
         </div>
       </Card>
