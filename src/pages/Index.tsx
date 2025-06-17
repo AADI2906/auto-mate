@@ -142,7 +142,11 @@ const Index = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              onClick={() => {
+                setSidebarCollapsed(!sidebarCollapsed);
+                setShowMobileMenu(!showMobileMenu);
+                console.log("Mobile menu toggled:", !showMobileMenu);
+              }}
               className="lg:hidden flex-shrink-0"
             >
               <Menu className="h-5 w-5" />
