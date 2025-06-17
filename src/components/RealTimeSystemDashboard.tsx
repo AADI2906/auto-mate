@@ -29,7 +29,7 @@ import {
 } from "@/services/SystemMetrics";
 import {
   Cpu,
-  Memory,
+  MemoryStick,
   HardDrive,
   Network,
   Activity,
