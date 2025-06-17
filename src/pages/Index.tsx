@@ -203,6 +203,12 @@ const Index = () => {
           <nav className="p-4 space-y-2">
             {[
               {
+                id: "chat",
+                label: "AI Assistant",
+                icon: MessageSquare,
+                badge: activeIncident ? "1" : null,
+              },
+              {
                 id: "overview",
                 label: "Overview",
                 icon: Activity,
