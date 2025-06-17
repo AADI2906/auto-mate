@@ -322,7 +322,9 @@ export const NaturalLanguageInterface: React.FC<
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowRemediation(!showRemediation)}
-                disabled={!activeContext || !shouldShowRemediation(activeContext)}
+                disabled={
+                  !activeContext || !shouldShowRemediation(activeContext)
+                }
               >
                 <Lightbulb className="h-4 w-4" />
               </Button>
@@ -349,198 +351,175 @@ export const NaturalLanguageInterface: React.FC<
       </Card>
 
       <div className="flex flex-1 overflow-hidden">
-        <div className={`flex ${showDashboard || showRemediation ? 'flex-col lg:flex-row' : 'flex-col'} flex-1 gap-4 p-4 overflow-hidden`}>
-        {/* Chat Interface */}
-        <div className={`${showDashboard || showRemediation ? 'lg:flex-1' : 'flex-1'} flex flex-col min-w-0`}>
-          {/* Messages */}
-          <Card className="flex-1 flex flex-col bg-background/50 backdrop-blur border-border/50">
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex gap-3 ${
-                      message.type === "user" ? "justify-end" : "justify-start"
-                    }`}
-                  >
-                    {message.type !== "user" && (
-                      <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center mt-1 flex-shrink-0">
-                        {message.type === "assistant" ? (
-                          <Bot className="h-4 w-4 text-primary" />
-                        ) : (
-                          <Brain className="h-4 w-4 text-primary" />
+        <div
+          className={`flex ${showDashboard || showRemediation ? "flex-col lg:flex-row" : "flex-col"} flex-1 gap-4 p-4 overflow-hidden`}
+        >
+          {/* Chat Interface */}
+          <div
+            className={`${showDashboard || showRemediation ? "lg:flex-1" : "flex-1"} flex flex-col min-w-0`}
+          >
+            {/* Messages */}
+            <Card className="flex-1 flex flex-col bg-background/50 backdrop-blur border-border/50">
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-4">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex gap-3 ${
+                        message.type === "user"
+                          ? "justify-end"
+                          : "justify-start"
+                      }`}
+                    >
+                      {message.type !== "user" && (
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center mt-1 flex-shrink-0">
+                          {message.type === "assistant" ? (
+                            <Bot className="h-4 w-4 text-primary" />
+                          ) : (
+                            <Brain className="h-4 w-4 text-primary" />
+                          )}
+                        </div>
+                      )}
+
+                      <div
+                        className={`max-w-[80%] ${
+                          message.type === "user"
+                            ? "bg-primary text-primary-foreground"
+                            : message.type === "system"
+                              ? "bg-muted/50 text-muted-foreground"
+                              : "bg-muted"
+                        } rounded-lg p-3`}
+                      >
+                        <div className="whitespace-pre-wrap text-sm">
+                          {message.content}
+                        </div>
+                        <div className="text-xs opacity-70 mt-2">
+                          {message.timestamp.toLocaleTimeString()}
+                        </div>
+
+                        {message.attachments && (
+                          <div className="mt-3 pt-3 border-t border-border/20">
+                            {message.attachments.map((attachment, index) => (
+                              <Button
+                                key={index}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowDashboard(true)}
+                                className="mr-2"
+                              >
+                                <Search className="h-3 w-3 mr-1" />
+                                {attachment.title}
+                              </Button>
+                            ))}
+                          </div>
                         )}
                       </div>
-                    )}
 
-                    <div
-                      className={`max-w-[80%] ${
-                        message.type === "user"
-                          ? "bg-primary text-primary-foreground"
-                          : message.type === "system"
-                            ? "bg-muted/50 text-muted-foreground"
-                            : "bg-muted"
-                      } rounded-lg p-3`}
-                    >
-                      <div className="whitespace-pre-wrap text-sm">
-                        {message.content}
-                      </div>
-                      <div className="text-xs opacity-70 mt-2">
-                        {message.timestamp.toLocaleTimeString()}
-                      </div>
-
-                      {message.attachments && (
-                        <div className="mt-3 pt-3 border-t border-border/20">
-                          {message.attachments.map((attachment, index) => (
-                            <Button
-                              key={index}
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setShowDashboard(true)}
-                              className="mr-2"
-                            >
-                              <Search className="h-3 w-3 mr-1" />
-                              {attachment.title}
-                            </Button>
-                          ))}
+                      {message.type === "user" && (
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center mt-1 flex-shrink-0">
+                          <User className="h-4 w-4" />
                         </div>
                       )}
                     </div>
+                  ))}
 
-                    {message.type === "user" && (
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center mt-1 flex-shrink-0">
-                        <User className="h-4 w-4" />
+                  {isProcessing && (
+                    <div className="flex gap-3 justify-start">
+                      <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center mt-1">
+                        <Loader2 className="h-4 w-4 text-primary animate-spin" />
                       </div>
-                    )}
-                  </div>
-                ))}
-
-                {isProcessing && (
-                  <div className="flex gap-3 justify-start">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center mt-1">
-                      <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                      <div className="bg-muted rounded-lg p-3">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Analyzing query and dispatching agents...</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="bg-muted rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Analyzing query and dispatching agents...</span>
-                      </div>
+                  )}
+
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
+
+              {/* Input Area */}
+              <div className="p-4 border-t border-border/50">
+                {/* Suggestions */}
+                {messages.length <= 1 && (
+                  <div className="mb-3">
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Try these examples:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {suggestions.slice(0, 3).map((suggestion, index) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSuggestionClick(suggestion)}
+                          className="text-xs"
+                        >
+                          {suggestion}
+                        </Button>
+                      ))}
                     </div>
                   </div>
                 )}
 
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
-
-            {/* Input Area */}
-            <div className="p-4 border-t border-border/50">
-              {/* Suggestions */}
-              {messages.length <= 1 && (
-                <div className="mb-3">
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Try these examples:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {suggestions.slice(0, 3).map((suggestion, index) => (
-                      <Button
-                        key={index}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSuggestionClick(suggestion)}
-                        className="text-xs"
-                      >
-                        {suggestion}
-                      </Button>
-                    ))}
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <Input
+                      ref={inputRef}
+                      value={currentInput}
+                      onChange={(e) => setCurrentInput(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Ask me about network issues, security incidents, or system performance..."
+                      disabled={isProcessing}
+                      className="pr-10"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleVoiceInput}
+                      disabled={isProcessing}
+                      className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 ${
+                        isListening ? "text-red-400" : ""
+                      }`}
+                    >
+                      {isListening ? (
+                        <MicOff className="h-4 w-4" />
+                      ) : (
+                        <Mic className="h-4 w-4" />
+                      )}
+                    </Button>
                   </div>
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <div className="flex-1 relative">
-                  <Input
-                    ref={inputRef}
-                    value={currentInput}
-                    onChange={(e) => setCurrentInput(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Ask me about network issues, security incidents, or system performance..."
-                    disabled={isProcessing}
-                    className="pr-10"
-                  />
                   <Button
-                    variant="ghost"
+                    onClick={handleSendMessage}
+                    disabled={!currentInput.trim() || isProcessing}
                     size="sm"
-                    onClick={handleVoiceInput}
-                    disabled={isProcessing}
-                    className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 ${
-                      isListening ? "text-red-400" : ""
-                    }`}
                   >
-                    {isListening ? (
-                      <MicOff className="h-4 w-4" />
+                    {isProcessing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Mic className="h-4 w-4" />
+                      <Send className="h-4 w-4" />
                     )}
                   </Button>
                 </div>
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!currentInput.trim() || isProcessing}
-                  size="sm"
-                >
-                  {isProcessing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                </Button>
               </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Dynamic Panels */}
-        {showDashboard && activeContext && (
-          <div className="w-full lg:w-1/2 flex flex-col min-w-0">
-            <Card className="flex-1 overflow-hidden bg-background/50 backdrop-blur border-border/50">
-              <div className="p-3 lg:p-4 border-b border-border/50 flex items-center justify-between">
-                <h3 className="font-semibold text-sm lg:text-base">Incident Dashboard</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowDashboard(false)}
-                  className="h-8 w-8 p-0"
-                >
-                  ×
-                </Button>
-              </div>
-              <ScrollArea className="flex-1">
-                <div className="p-3 lg:p-4">
-                  <DynamicIncidentDashboard
-                    context={activeContext}
-                    onRefresh={() => {
-                      // Refresh context
-                      console.log("Refreshing context...");
-                    }}
-                  />
-                </div>
-              </ScrollArea>
             </Card>
           </div>
-        )}
 
-        {showRemediation &&
-          activeContext &&
-          shouldShowRemediation(activeContext) && (
+          {/* Dynamic Panels */}
+          {showDashboard && activeContext && (
             <div className="w-full lg:w-1/2 flex flex-col min-w-0">
               <Card className="flex-1 overflow-hidden bg-background/50 backdrop-blur border-border/50">
                 <div className="p-3 lg:p-4 border-b border-border/50 flex items-center justify-between">
-                  <h3 className="font-semibold text-sm lg:text-base">Automated Remediation</h3>
+                  <h3 className="font-semibold text-sm lg:text-base">
+                    Incident Dashboard
+                  </h3>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setShowRemediation(false)}
+                    onClick={() => setShowDashboard(false)}
                     className="h-8 w-8 p-0"
                   >
                     ×
@@ -548,16 +527,50 @@ export const NaturalLanguageInterface: React.FC<
                 </div>
                 <ScrollArea className="flex-1">
                   <div className="p-3 lg:p-4">
-                    <RemediationWorkflow
+                    <DynamicIncidentDashboard
                       context={activeContext}
-                      onActionExecuted={handleRemediationExecuted}
-                      onAuditLog={handleAuditLog}
+                      onRefresh={() => {
+                        // Refresh context
+                        console.log("Refreshing context...");
+                      }}
                     />
                   </div>
                 </ScrollArea>
               </Card>
             </div>
           )}
+
+          {showRemediation &&
+            activeContext &&
+            shouldShowRemediation(activeContext) && (
+              <div className="w-full lg:w-1/2 flex flex-col min-w-0">
+                <Card className="flex-1 overflow-hidden bg-background/50 backdrop-blur border-border/50">
+                  <div className="p-3 lg:p-4 border-b border-border/50 flex items-center justify-between">
+                    <h3 className="font-semibold text-sm lg:text-base">
+                      Automated Remediation
+                    </h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowRemediation(false)}
+                      className="h-8 w-8 p-0"
+                    >
+                      ×
+                    </Button>
+                  </div>
+                  <ScrollArea className="flex-1">
+                    <div className="p-3 lg:p-4">
+                      <RemediationWorkflow
+                        context={activeContext}
+                        onActionExecuted={handleRemediationExecuted}
+                        onAuditLog={handleAuditLog}
+                      />
+                    </div>
+                  </ScrollArea>
+                </Card>
+              </div>
+            )}
+        </div>
       </div>
     </div>
   );
