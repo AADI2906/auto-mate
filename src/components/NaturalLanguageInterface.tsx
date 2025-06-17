@@ -349,9 +349,9 @@ export const NaturalLanguageInterface: React.FC<
       </Card>
 
       <div className="flex flex-1 overflow-hidden">
-        <div className="flex flex-col md:flex-row flex-1 gap-4 p-4 overflow-hidden">
+        <div className={`flex ${showDashboard || showRemediation ? 'flex-col lg:flex-row' : 'flex-col'} flex-1 gap-4 p-4 overflow-hidden`}>
         {/* Chat Interface */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className={`${showDashboard || showRemediation ? 'lg:flex-1' : 'flex-1'} flex flex-col min-w-0`}>
           {/* Messages */}
           <Card className="flex-1 flex flex-col bg-background/50 backdrop-blur border-border/50">
             <ScrollArea className="flex-1 p-4">
