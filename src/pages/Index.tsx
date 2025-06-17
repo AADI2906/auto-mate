@@ -8,6 +8,8 @@ import { NetworkCanvas } from "@/components/NetworkCanvas";
 import { AIInsights } from "@/components/AIInsights";
 import { SecurityAlerts } from "@/components/SecurityAlerts";
 import { MetricsDashboard } from "@/components/MetricsDashboard";
+import { NaturalLanguageInterface } from "@/components/NaturalLanguageInterface";
+import { IncidentContext } from "@/types/nlp";
 import {
   Shield,
   Brain,
@@ -24,6 +26,7 @@ import {
   Globe,
   Users,
   Server,
+  MessageSquare,
 } from "lucide-react";
 
 const Index = () => {
