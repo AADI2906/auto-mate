@@ -324,13 +324,35 @@ export const NetworkCanvas: React.FC = () => {
   const handleZoom = useCallback((direction: "in" | "out") => {
     setScale((prev) => {
       const newScale = direction === "in" ? prev * 1.2 : prev / 1.2;
-      return Math.max(0.1, Math.min(3, newScale));
+      const clampedScale = Math.max(0.1, Math.min(3, newScale));
+
+      // Show feedback for zoom limits
+      if (clampedScale === 3 && direction === "in") {
+        console.log("Maximum zoom level reached");
+      } else if (clampedScale === 0.1 && direction === "out") {
+        console.log("Minimum zoom level reached");
+      }
+
+      return clampedScale;
     });
   }, []);
 
   const resetView = useCallback(() => {
     setScale(1);
     setOffset({ x: 0, y: 0 });
+    setSelectedNode(null);
+    console.log("View reset to default");
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    if (!document.fullscreenElement) {
+      canvas.parentElement?.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
   }, []);
 
   useEffect(() => {
