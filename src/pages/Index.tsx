@@ -443,6 +443,12 @@ const Index = () => {
               <MetricsDashboard />
             </div>
           )}
+
+          {activeView === "system" && (
+            <div className="p-6">
+              <RealTimeSystemDashboard />
+            </div>
+          )}
         </main>
       </div>
 
