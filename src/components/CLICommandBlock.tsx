@@ -30,10 +30,26 @@ export const CLICommandBlock: React.FC<CLICommandBlockProps> = ({
   }>({});
   const [lastExecutionMethod, setLastExecutionMethod] = useState<string>("");
   const [showInstructions, setShowInstructions] = useState(false);
+  const [backendAvailable, setBackendAvailable] = useState<boolean | null>(
+    null,
+  );
 
   const platform = CommandExecutor.detectPlatform();
   const platformEmoji = CommandExecutor.getPlatformEmoji();
   const platformInstructions = CommandExecutor.getPlatformInstructions();
+
+  // Check backend health on component mount
+  React.useEffect(() => {
+    const checkBackend = async () => {
+      const isHealthy = await CommandExecutor.checkBackendHealth();
+      setBackendAvailable(isHealthy);
+    };
+    checkBackend();
+  }, []);
+
+  const [commandResults, setCommandResults] = useState<{
+    [key: string]: { output?: string; stderr?: string; returncode?: number };
+  }>({});
 
   const executeCommand = async (command: string, index: number) => {
     setExecutionStatus((prev) => ({ ...prev, [index]: "executing" }));
@@ -45,16 +61,41 @@ export const CLICommandBlock: React.FC<CLICommandBlockProps> = ({
         setExecutionStatus((prev) => ({ ...prev, [index]: "success" }));
         setLastExecutionMethod(result.method);
 
+        // Store command results for display
+        if (result.method === "backend") {
+          setCommandResults((prev) => ({
+            ...prev,
+            [index]: {
+              output: result.output,
+              stderr: result.stderr,
+              returncode: result.returncode,
+            },
+          }));
+        }
+
         if (result.method === "clipboard") {
           setShowInstructions(true);
         }
 
-        // Reset status after 3 seconds
-        setTimeout(() => {
-          setExecutionStatus((prev) => ({ ...prev, [index]: "idle" }));
-        }, 3000);
+        // Reset status after 5 seconds for backend results (to show output)
+        setTimeout(
+          () => {
+            setExecutionStatus((prev) => ({ ...prev, [index]: "idle" }));
+          },
+          result.method === "backend" ? 5000 : 3000,
+        );
       } else {
         setExecutionStatus((prev) => ({ ...prev, [index]: "error" }));
+
+        // Store error details
+        setCommandResults((prev) => ({
+          ...prev,
+          [index]: {
+            stderr: result.error,
+            returncode: -1,
+          },
+        }));
+
         console.error("Command execution failed:", result.error);
       }
     } catch (error) {
@@ -127,6 +168,20 @@ export const CLICommandBlock: React.FC<CLICommandBlockProps> = ({
           <h4 className="font-semibold text-sm">{title}</h4>
           <Badge variant="outline" className="text-xs">
             {platformEmoji} {platform}
+          </Badge>
+          <Badge
+            variant="outline"
+            className={`text-xs ${
+              backendAvailable === true
+                ? "text-green-400 bg-green-400/10 border-green-400/20"
+                : backendAvailable === false
+                  ? "text-red-400 bg-red-400/10 border-red-400/20"
+                  : "text-yellow-400 bg-yellow-400/10 border-yellow-400/20"
+            }`}
+          >
+            {backendAvailable === true && "🐍 Backend Ready"}
+            {backendAvailable === false && "⚠️ Backend Offline"}
+            {backendAvailable === null && "🔄 Checking..."}
           </Badge>
         </div>
 
@@ -228,9 +283,47 @@ export const CLICommandBlock: React.FC<CLICommandBlockProps> = ({
                   ✓ Opened in terminal
                 </div>
               )}
+              {status === "success" && lastExecutionMethod === "backend" && (
+                <div className="mt-2 text-xs text-green-400">
+                  ✓ Executed on your system via Python backend
+                </div>
+              )}
               {status === "error" && (
                 <div className="mt-2 text-xs text-red-400">
                   ✗ Failed to execute - try copying manually
+                </div>
+              )}
+
+              {/* Command Results */}
+              {commandResults[index] && (
+                <div className="mt-3 space-y-2">
+                  {commandResults[index].output && (
+                    <div className="bg-black/20 border border-green-400/20 rounded p-2">
+                      <div className="text-xs text-green-400 mb-1 font-medium">
+                        ✅ Output:
+                      </div>
+                      <pre className="text-xs text-green-300 whitespace-pre-wrap font-mono">
+                        {commandResults[index].output}
+                      </pre>
+                    </div>
+                  )}
+
+                  {commandResults[index].stderr && (
+                    <div className="bg-black/20 border border-red-400/20 rounded p-2">
+                      <div className="text-xs text-red-400 mb-1 font-medium">
+                        ❌ Error:
+                      </div>
+                      <pre className="text-xs text-red-300 whitespace-pre-wrap font-mono">
+                        {commandResults[index].stderr}
+                      </pre>
+                    </div>
+                  )}
+
+                  {commandResults[index].returncode !== undefined && (
+                    <div className="text-xs text-muted-foreground">
+                      Return code: {commandResults[index].returncode}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

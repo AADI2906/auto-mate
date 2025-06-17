@@ -88,24 +88,39 @@ export class CommandExecutor {
     return { blob, filename };
   }
 
-  // Execute command using various methods
-  static async executeCommand(
-    command: string,
-  ): Promise<{ success: boolean; method: string; error?: string }> {
-    const platform = this.detectPlatform();
-
+  // Execute command using Python backend
+  static async executeCommand(command: string): Promise<{
+    success: boolean;
+    method: string;
+    error?: string;
+    output?: string;
+    stderr?: string;
+    returncode?: number;
+  }> {
     try {
-      // Method 1: Try to use custom protocol handler (if available)
+      // Method 1: Try Python backend execution
+      const backendResult = await this.executeViaBackend(command);
+      if (backendResult.success) {
+        return {
+          success: true,
+          method: "backend",
+          output: backendResult.output,
+          stderr: backendResult.stderr,
+          returncode: backendResult.returncode,
+        };
+      }
+
+      // Method 2: Try protocol handler (if backend fails)
       if (await this.tryProtocolHandler(command)) {
         return { success: true, method: "protocol" };
       }
 
-      // Method 2: Try to open in system terminal
+      // Method 3: Try to open in system terminal
       if (await this.trySystemTerminal(command)) {
         return { success: true, method: "terminal" };
       }
 
-      // Method 3: Copy to clipboard and show instructions
+      // Method 4: Copy to clipboard and show instructions
       await this.copyToClipboard(command);
       return { success: true, method: "clipboard" };
     } catch (error) {
@@ -114,6 +129,99 @@ export class CommandExecutor {
         method: "none",
         error: error instanceof Error ? error.message : "Unknown error",
       };
+    }
+  }
+
+  // Execute command via Python backend
+  private static async executeViaBackend(command: string): Promise<{
+    success: boolean;
+    output?: string;
+    stderr?: string;
+    returncode?: number;
+    error?: string;
+  }> {
+    try {
+      const response = await fetch("http://localhost:5000/api/execute", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          command: command,
+          timeout: 30,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Backend error: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        return {
+          success: true,
+          output: result.stdout,
+          stderr: result.stderr,
+          returncode: result.returncode,
+        };
+      } else {
+        return {
+          success: false,
+          error: result.error || "Unknown backend error",
+        };
+      }
+    } catch (error) {
+      console.warn("Backend execution failed:", error);
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Backend connection failed",
+      };
+    }
+  }
+
+  // Execute multiple commands via backend
+  static async executeBatchCommands(commands: string[]): Promise<{
+    success: boolean;
+    results?: any[];
+    error?: string;
+  }> {
+    try {
+      const response = await fetch("http://localhost:5000/api/execute-batch", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          commands: commands,
+          timeout: 30,
+          stop_on_error: false,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Backend error: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Backend connection failed",
+      };
+    }
+  }
+
+  // Check if backend is available
+  static async checkBackendHealth(): Promise<boolean> {
+    try {
+      const response = await fetch("http://localhost:5000/api/health");
+      return response.ok;
+    } catch {
+      return false;
     }
   }
 
