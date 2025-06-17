@@ -7,9 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AIInsights } from "@/components/AIInsights";
 import { SecurityAlerts } from "@/components/SecurityAlerts";
 import { MetricsDashboard } from "@/components/MetricsDashboard";
-import { NaturalLanguageInterface } from "@/components/NaturalLanguageInterface";
 import { RealTimeSystemDashboard } from "@/components/RealTimeSystemDashboard";
-import { IncidentContext } from "@/types/nlp";
 import {
   Shield,
   Brain,
@@ -26,15 +24,12 @@ import {
   Globe,
   Users,
   Server,
-  MessageSquare,
 } from "lucide-react";
 
 const Index = () => {
-  const [activeView, setActiveView] = useState("chat");
+  const [activeView, setActiveView] = useState("overview");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeIncident, setActiveIncident] = useState<IncidentContext | null>(
-    null,
-  );
+
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const quickStats = [
@@ -158,28 +153,8 @@ const Index = () => {
               <div className="min-w-0">
                 <h1 className="text-lg lg:text-xl font-bold">NeuroSecure</h1>
                 <p className="text-xs text-muted-foreground hidden sm:block">
-                  AI-Powered Security Operations Platform
+                  Security Operations Platform
                 </p>
-                {activeIncident && (
-                  <div className="flex flex-wrap items-center gap-1 lg:gap-2 mt-1">
-                    <Badge variant="outline" className="text-xs">
-                      Active: {activeIncident.id}
-                    </Badge>
-                    <Badge
-                      className={`text-xs ${
-                        activeIncident.severity === "critical"
-                          ? "bg-red-500/10 text-red-400"
-                          : activeIncident.severity === "high"
-                            ? "bg-orange-500/10 text-orange-400"
-                            : activeIncident.severity === "medium"
-                              ? "bg-yellow-500/10 text-yellow-400"
-                              : "bg-green-500/10 text-green-400"
-                      }`}
-                    >
-                      {activeIncident.severity}
-                    </Badge>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -248,12 +223,6 @@ const Index = () => {
           <nav className="p-3 lg:p-4 space-y-2">
             {[
               {
-                id: "chat",
-                label: "AI Assistant",
-                icon: MessageSquare,
-                badge: activeIncident ? "1" : null,
-              },
-              {
                 id: "overview",
                 label: "Overview",
                 icon: Activity,
@@ -314,12 +283,6 @@ const Index = () => {
 
         {/* Main Content */}
         <main className="flex-1 min-w-0 overflow-hidden">
-          {activeView === "chat" && (
-            <div className="h-full">
-              <NaturalLanguageInterface onContextChange={setActiveIncident} />
-            </div>
-          )}
-
           {activeView === "overview" && (
             <div className="p-6 space-y-6">
               {/* Quick Stats */}
