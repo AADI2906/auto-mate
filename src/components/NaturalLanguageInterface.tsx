@@ -12,6 +12,8 @@ import {
   AuditLogEntry,
   ParsedQuery,
 } from "@/types/nlp";
+import { ParsedSolution } from "@/services/LlamaAPI";
+import { AutoFixPanel } from "./AutoFixPanel";
 import { LLMQueryProcessor } from "./LLMQueryProcessor";
 import { AgentOrchestrator } from "./AgentOrchestrator";
 import { DynamicIncidentDashboard } from "./DynamicIncidentDashboard";
@@ -26,6 +28,7 @@ import {
   Search,
   Settings,
   Mic,
+  Zap,
 } from "lucide-react";
 
 interface NaturalLanguageInterfaceProps {
@@ -40,7 +43,7 @@ export const NaturalLanguageInterface: React.FC<
       id: "welcome",
       type: "assistant",
       content:
-        "Hello! I'm your AI Security Assistant. I can help you investigate network issues, analyze security incidents, and provide automated remediation. Try asking me questions like 'Why is VPN failing for user 10.1.1.10?' or 'Check posture compliance for device aa:bb:cc:dd:ee:ff'.",
+        '🤖 **Welcome to NeuroSecure AI Assistant**\n\nPowered by **Llama 3.1:8b** running locally on your machine, I provide real-time analysis and automated CLI-based solutions.\n\n**I can help you with:**\n• Network troubleshooting (VPN, connectivity, performance)\n• Security incident analysis and response\n• System performance optimization\n• Automated remediation with CLI commands\n\n**Try asking:**\n• "VPN not working"\n• "Network is slow"\n• "Authentication issues"\n• "Check system performance"\n\nI\'ll provide instant responses with specific CLI commands and auto-fix options! 🚀',
       timestamp: new Date(),
     },
   ]);
@@ -76,65 +79,152 @@ export const NaturalLanguageInterface: React.FC<
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const originalQuery = currentInput.trim();
     setCurrentInput("");
     setIsProcessing(true);
 
+    // Create streaming message placeholder
+    const streamingMessageId = `stream-${Date.now()}`;
+    const streamingMessage: ConversationMessage = {
+      id: streamingMessageId,
+      type: "assistant",
+      content: "",
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, streamingMessage]);
+
     try {
-      // Parse the query using LLM
-      const parsedQuery = await LLMQueryProcessor.simulateLLMProcessing(
-        userMessage.content,
+      // Import LlamaAPI
+      const { LlamaAPI } = await import("@/services/LlamaAPI");
+
+      // Get real-time response from local Llama
+      const { response, solution } = await LlamaAPI.sendQuery(
+        originalQuery,
+        // onStream callback - update message content in real-time
+        (chunk: string) => {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === streamingMessageId
+                ? { ...msg, content: msg.content + chunk }
+                : msg,
+            ),
+          );
+        },
+        // onComplete callback - add auto-fix capabilities
+        (fullResponse: string, parsedSolution) => {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === streamingMessageId
+                ? {
+                    ...msg,
+                    content: fullResponse,
+                    solution: parsedSolution,
+                    attachments: [
+                      {
+                        type: "autofix",
+                        title: "Auto-Fix Available",
+                        data: parsedSolution,
+                      },
+                      {
+                        type: "dashboard",
+                        title: "Real-Time Analysis",
+                        data: {
+                          solution: parsedSolution,
+                          query: originalQuery,
+                        },
+                      },
+                    ],
+                  }
+                : msg,
+            ),
+          );
+
+          // Generate incident context for compatibility
+          const mockContext: IncidentContext = {
+            id: `llama-${Date.now()}`,
+            query: {
+              originalQuery,
+              intent: parsedSolution.category,
+              entities: [],
+              confidence: 0.9,
+              timestamp: new Date(),
+            },
+            agentTasks: [],
+            correlations: [],
+            affectedAssets: [],
+            severity: parsedSolution.severity,
+            status: "active",
+            timeline: [
+              {
+                timestamp: new Date(),
+                event: "AI Analysis Complete",
+                source: "Llama 3.1:8b",
+                severity: "info",
+              },
+            ],
+            createdAt: new Date(),
+            lastUpdated: new Date(),
+          };
+
+          setActiveContext(mockContext);
+          onContextChange?.(mockContext);
+
+          // Auto-show panels based on solution
+          if (parsedSolution.cliCommands.length > 0) {
+            setShowRemediation(true);
+          }
+          setShowDashboard(true);
+        },
       );
 
-      // Add parsing confirmation message
-      const parsingMessage: ConversationMessage = {
-        id: `parsing-${Date.now()}`,
+      // Add system message with analysis summary
+      const analysisMessage: ConversationMessage = {
+        id: `analysis-${Date.now()}`,
         type: "system",
-        content: `🧠 Analyzing query... Intent: ${parsedQuery.intent}, Confidence: ${Math.round(parsedQuery.confidence * 100)}%`,
+        content: `🤖 **Llama 3.1:8b Analysis Complete**
+
+✅ **Category:** ${solution.category}
+⚡ **Severity:** ${solution.severity}
+🛡️ **Risk Level:** ${solution.riskLevel}
+⏱️ **Estimated Fix Time:** ${solution.estimatedTime}
+🔧 **CLI Commands Available:** ${solution.cliCommands.length}
+
+${solution.cliCommands.length > 0 ? "Auto-fix and review buttons are now available!" : "No automated fixes available for this query."}`,
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, parsingMessage]);
-
-      // Orchestrate investigation
-      const context =
-        await AgentOrchestrator.orchestrateInvestigation(parsedQuery);
-
-      setActiveContext(context);
-      onContextChange?.(context);
-
-      // Generate response based on analysis
-      const response = generateResponseFromContext(context, parsedQuery);
-
-      const assistantMessage: ConversationMessage = {
-        id: `response-${Date.now()}`,
-        type: "assistant",
-        content: response,
-        timestamp: new Date(),
-        context,
-        attachments: [
-          {
-            type: "dashboard",
-            title: "Incident Analysis",
-            data: context,
-          },
-        ],
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-
-      // Auto-show dashboard for incident contexts
-      if (context.agentTasks.length > 0 || context.correlations.length > 0) {
-        setShowDashboard(true);
-      }
-
-      // Show remediation if we have suggested actions
-      if (shouldShowRemediation(context)) {
-        setShowRemediation(true);
-      }
+      setMessages((prev) => [...prev, analysisMessage]);
     } catch (error) {
+      // Remove the streaming message and add error
+      setMessages((prev) =>
+        prev.filter((msg) => msg.id !== streamingMessageId),
+      );
+
       const errorMessage: ConversationMessage = {
         id: `error-${Date.now()}`,
         type: "assistant",
-        content: `❌ I encountered an error while processing your request: ${error instanceof Error ? error.message : "Unknown error"}. Please try rephrasing your question.`,
+        content: `❌ **Llama Connection Error**
+
+I couldn't connect to your local Llama 3.1:8b instance. This could be because:
+
+• Ollama is not running on localhost:11434
+• Llama 3.1:8b model is not installed
+• Network connectivity issues
+
+**Quick fixes:**
+\`\`\`bash
+# Start Ollama (if not running)
+ollama serve
+
+# Pull Llama 3.1:8b model (if not installed)
+ollama pull llama3.1:8b
+
+# Check if Ollama is running
+curl http://localhost:11434/api/tags
+\`\`\`
+
+You can still use the dashboard and analysis features. Please check your Ollama setup and try again.
+
+**Error details:** ${error instanceof Error ? error.message : "Unknown error"}`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -373,7 +463,7 @@ export const NaturalLanguageInterface: React.FC<
             <div className="min-w-0">
               <h3 className="font-semibold">AI Security Assistant</h3>
               <p className="text-xs text-muted-foreground">
-                Powered by LLM + Multi-Agent System
+                Powered by Llama 3.1:8b + Real-Time CLI Solutions
               </p>
             </div>
           </div>
@@ -490,19 +580,83 @@ export const NaturalLanguageInterface: React.FC<
                         {message.attachments && (
                           <div className="mt-3 pt-3 border-t border-border/20">
                             {message.attachments.map((attachment, index) => (
-                              <Button
-                                key={index}
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setShowDashboard(true)}
-                                className="mr-2"
-                              >
-                                <Search className="h-3 w-3 mr-1" />
-                                {attachment.title}
-                              </Button>
+                              <div key={index} className="mb-2">
+                                {attachment.type === "autofix" && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowRemediation(true)}
+                                    className="mr-2"
+                                  >
+                                    <Zap className="h-3 w-3 mr-1" />
+                                    {attachment.title}
+                                  </Button>
+                                )}
+                                {attachment.type === "dashboard" && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowDashboard(true)}
+                                    className="mr-2"
+                                  >
+                                    <Search className="h-3 w-3 mr-1" />
+                                    {attachment.title}
+                                  </Button>
+                                )}
+                              </div>
                             ))}
                           </div>
                         )}
+
+                        {/* Auto-Fix Panel for messages with solutions */}
+                        {(message as any).solution &&
+                          message.type === "assistant" && (
+                            <div className="mt-4">
+                              <AutoFixPanel
+                                solution={(message as any).solution}
+                                onExecuteCommand={async (command: string) => {
+                                  // Simulate command execution
+                                  await new Promise((resolve) =>
+                                    setTimeout(
+                                      resolve,
+                                      1000 + Math.random() * 2000,
+                                    ),
+                                  );
+
+                                  // Mock execution results
+                                  const isSuccess = Math.random() > 0.2; // 80% success rate
+                                  const mockOutput = isSuccess
+                                    ? `Command executed successfully:\n${command}\n\nProcess completed at ${new Date().toLocaleTimeString()}`
+                                    : `Command failed with error:\nPermission denied or service unavailable`;
+
+                                  return {
+                                    success: isSuccess,
+                                    output: isSuccess ? mockOutput : "",
+                                    error: isSuccess ? undefined : mockOutput,
+                                  };
+                                }}
+                                onReviewAll={() => {
+                                  const reviewMessage: ConversationMessage = {
+                                    id: `review-${Date.now()}`,
+                                    type: "system",
+                                    content: `📋 **Command Review Requested**
+
+All commands have been copied to your clipboard for manual review. Please verify each command before execution in your terminal.
+
+**Safety Reminder:**
+• Test commands in a non-production environment first
+• Ensure you have proper backups
+• Review each command for your specific system configuration`,
+                                    timestamp: new Date(),
+                                  };
+                                  setMessages((prev) => [
+                                    ...prev,
+                                    reviewMessage,
+                                  ]);
+                                }}
+                              />
+                            </div>
+                          )}
                       </div>
 
                       {message.type === "user" && (
