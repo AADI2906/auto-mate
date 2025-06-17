@@ -74,10 +74,10 @@ export const DynamicIncidentDashboard: React.FC<
     };
 
     const blob = new Blob([JSON.stringify(reportData, null, 2)], {
-      type: "application/json",
+      type: 'application/json',
     });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
     a.download = `incident-report-${context.id}.json`;
     document.body.appendChild(a);
@@ -99,17 +99,17 @@ export const DynamicIncidentDashboard: React.FC<
       } else {
         // Fallback to copying URL to clipboard
         await navigator.clipboard.writeText(window.location.href);
-        alert("Incident URL copied to clipboard!");
+        alert('Incident URL copied to clipboard!');
       }
     } catch (error) {
-      console.error("Error sharing:", error);
+      console.error('Error sharing:', error);
       // Fallback to copying URL
       try {
         await navigator.clipboard.writeText(window.location.href);
-        alert("Incident URL copied to clipboard!");
+        alert('Incident URL copied to clipboard!');
       } catch (clipboardError) {
-        console.error("Clipboard error:", clipboardError);
-        alert("Unable to share or copy URL");
+        console.error('Clipboard error:', clipboardError);
+        alert('Unable to share or copy URL');
       }
     }
   };
@@ -260,9 +260,7 @@ export const DynamicIncidentDashboard: React.FC<
             <div className="flex items-center gap-2 min-w-0">
               <Eye className="h-5 w-5 lg:h-6 lg:w-6 text-primary flex-shrink-0" />
               <div className="min-w-0">
-                <h2 className="text-lg lg:text-xl font-bold">
-                  Incident Analysis
-                </h2>
+                <h2 className="text-lg lg:text-xl font-bold">Incident Analysis</h2>
                 <p className="text-xs lg:text-sm text-muted-foreground truncate">
                   {context.query.originalQuery}
                 </p>
@@ -279,21 +277,11 @@ export const DynamicIncidentDashboard: React.FC<
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExport}
-              className="hidden sm:flex"
-            >
+            <Button variant="outline" size="sm" onClick={handleExport} className="hidden sm:flex">
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleShare}
-              className="hidden sm:flex"
-            >
+            <Button variant="outline" size="sm" onClick={handleShare} className="hidden sm:flex">
               <Share className="h-4 w-4 mr-2" />
               Share
             </Button>
@@ -310,46 +298,39 @@ export const DynamicIncidentDashboard: React.FC<
             <div className="text-xl lg:text-2xl font-bold text-primary">
               {context.agentTasks.length}
             </div>
-            <div className="text-xs lg:text-sm text-muted-foreground">
-              Agents Deployed
-            </div>
+            <div className="text-xs lg:text-sm text-muted-foreground">Agents Deployed</div>
           </div>
           <div className="text-center p-2 lg:p-0">
             <div className="text-xl lg:text-2xl font-bold text-orange-400">
               {context.correlations.length}
             </div>
-            <div className="text-xs lg:text-sm text-muted-foreground">
-              Correlations
-            </div>
+            <div className="text-xs lg:text-sm text-muted-foreground">Correlations</div>
           </div>
           <div className="text-center p-2 lg:p-0">
             <div className="text-xl lg:text-2xl font-bold text-red-400">
               {context.affectedAssets.length}
             </div>
-            <div className="text-xs lg:text-sm text-muted-foreground">
-              Affected Assets
-            </div>
+            <div className="text-xs lg:text-sm text-muted-foreground">Affected Assets</div>
           </div>
           <div className="text-center p-2 lg:p-0">
             <div className="text-xl lg:text-2xl font-bold text-green-400">
               {context.timeline.length}
             </div>
-            <div className="text-xs lg:text-sm text-muted-foreground">
-              Timeline Events
-            </div>
+            <div className="text-xs lg:text-sm text-muted-foreground">Timeline Events</div>
           </div>
         </div>
       </Card>
 
       {/* Tabs for different views */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-          <TabsTrigger value="correlations">Correlations</TabsTrigger>
-          <TabsTrigger value="assets">Assets</TabsTrigger>
-          <TabsTrigger value="telemetry">Telemetry</TabsTrigger>
-        </TabsList>
+      <div className="flex-1 flex flex-col min-h-0">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
+          <TabsList className="grid w-full grid-cols-5 flex-shrink-0">
+            <TabsTrigger value="overview" className="text-xs lg:text-sm">Overview</TabsTrigger>
+            <TabsTrigger value="timeline" className="text-xs lg:text-sm">Timeline</TabsTrigger>
+            <TabsTrigger value="correlations" className="text-xs lg:text-sm">Correlations</TabsTrigger>
+            <TabsTrigger value="assets" className="text-xs lg:text-sm">Assets</TabsTrigger>
+            <TabsTrigger value="telemetry" className="text-xs lg:text-sm">Telemetry</TabsTrigger>
+          </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
