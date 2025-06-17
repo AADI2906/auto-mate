@@ -13,6 +13,8 @@ import {
   Zap,
   Copy,
   CheckCircle,
+  Plus,
+  RotateCcw,
 } from "lucide-react";
 
 interface Message {
@@ -286,6 +288,39 @@ Please try again or rephrase your question.`,
     navigator.clipboard.writeText(text);
   };
 
+  const startNewChat = () => {
+    // Reset to just the welcome message
+    setMessages([
+      {
+        id: "welcome",
+        type: "assistant",
+        content: `🤖 **Llama 3.1:8b AI Assistant**
+
+I'm your local AI assistant powered by **Llama 3.1:8b** model. I can help you with:
+
+• **Technical Support** - Network issues, system troubleshooting, CLI commands
+• **Code Assistance** - Programming help, debugging, best practices
+• **Security Analysis** - Threat assessment, security recommendations
+• **System Administration** - Server management, configuration, monitoring
+• **General Questions** - Information, explanations, guidance
+
+**Model:** llama3.1:8b
+**Environment Status:** ${
+          connectionStatus === "connected"
+            ? "🟢 Local (llama3.1:8b Ready)"
+            : connectionStatus === "disconnected"
+              ? "🟡 Simulated Mode"
+              : "Checking Model..."
+        }
+
+Ask me anything! I'll provide detailed, practical responses.`,
+        timestamp: new Date(),
+      },
+    ]);
+    setCurrentInput("");
+    setIsProcessing(false);
+  };
+
   const getConnectionStatusColor = () => {
     switch (connectionStatus) {
       case "connected":
@@ -324,6 +359,17 @@ Please try again or rephrase your question.`,
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={startNewChat}
+              className="h-8 px-3 text-xs"
+              disabled={isProcessing}
+              title="Start new conversation"
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              New Chat
+            </Button>
             <Badge
               variant="outline"
               className={`text-xs ${getConnectionStatusColor()}`}

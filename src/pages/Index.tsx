@@ -240,13 +240,13 @@ const Index = () => {
                 id: "security",
                 label: "Security Alerts",
                 icon: Shield,
-                badge: "23",
+                badge: activeView === "security" ? null : "23",
               },
               {
                 id: "ai",
                 label: "AI Insights",
                 icon: Brain,
-                badge: "12",
+                badge: activeView === "ai" ? null : "12",
               },
               {
                 id: "metrics",
