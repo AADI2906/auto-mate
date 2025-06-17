@@ -218,7 +218,7 @@ export const RealTimeSystemDashboard: React.FC = () => {
 
           <Card className="p-4 bg-muted/20">
             <div className="flex items-center justify-between mb-2">
-              <Memory className="h-5 w-5 text-green-400" />
+              <MemoryStick className="h-5 w-5 text-green-400" />
               <Badge variant="outline" className="text-xs">
                 RAM
               </Badge>
