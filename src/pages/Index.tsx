@@ -269,6 +269,12 @@ const Index = () => {
 
         {/* Main Content */}
         <main className="flex-1 overflow-hidden">
+          {activeView === "chat" && (
+            <div className="h-full">
+              <NaturalLanguageInterface onContextChange={setActiveIncident} />
+            </div>
+          )}
+
           {activeView === "overview" && (
             <div className="p-6 space-y-6">
               {/* Quick Stats */}
