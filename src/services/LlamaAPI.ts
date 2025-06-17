@@ -54,16 +54,43 @@ Common scenarios:
 
 Always provide multiple solutions when possible, starting with the safest approach.`;
 
-  static async isAvailable(): Promise<boolean> {
+  static async isAvailable(): Promise<{ available: boolean; error?: string }> {
     try {
+      // Add timeout and better error handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+
       const response = await fetch(`${this.baseUrl}/api/tags`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        mode: "cors", // Explicitly set CORS mode
       });
-      return response.ok;
+
+      clearTimeout(timeoutId);
+      return { available: response.ok };
     } catch (error) {
-      console.warn("Llama API not available:", error);
-      return false;
+      let errorMessage = "Unknown error";
+
+      if (error instanceof Error) {
+        if (error.name === "AbortError") {
+          errorMessage = "Connection timeout - Ollama may not be running";
+        } else if (
+          error.message.includes("CORS") ||
+          error.message.includes("fetch")
+        ) {
+          errorMessage =
+            "CORS/Network error - Cannot connect to localhost:11434 from hosted environment";
+        } else if (error.message.includes("Failed to fetch")) {
+          errorMessage =
+            "Network error - Ollama server may not be running or accessible";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      console.warn("Llama API not available:", errorMessage);
+      return { available: false, error: errorMessage };
     }
   }
 
@@ -71,11 +98,19 @@ Always provide multiple solutions when possible, starting with the safest approa
     query: string,
     onStream?: (chunk: string) => void,
     onComplete?: (fullResponse: string, parsed: ParsedSolution) => void,
-  ): Promise<{ response: string; solution: ParsedSolution }> {
+    onError?: (error: string) => void,
+  ): Promise<{
+    response: string;
+    solution: ParsedSolution;
+    isFromLlama: boolean;
+    error?: string;
+  }> {
     // Check if Llama is available, fallback to mock if not
-    const isAvailable = await this.isAvailable();
-    if (!isAvailable) {
-      return this.mockResponse(query, onStream, onComplete);
+    const availabilityCheck = await this.isAvailable();
+    if (!availabilityCheck.available) {
+      onError?.(availabilityCheck.error || "Llama not available");
+      const result = await this.mockResponse(query, onStream, onComplete);
+      return { ...result, isFromLlama: false, error: availabilityCheck.error };
     }
 
     const request: LlamaRequest = {
@@ -89,14 +124,23 @@ Always provide multiple solutions when possible, starting with the safest approa
     };
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for generation
+
       const response = await fetch(`${this.baseUrl}/api/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(request),
+        signal: controller.signal,
+        mode: "cors",
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        throw new Error(`Llama API error: ${response.status}`);
+        throw new Error(
+          `Llama API error: ${response.status} ${response.statusText}`,
+        );
       }
 
       let fullResponse = "";
@@ -131,11 +175,30 @@ Always provide multiple solutions when possible, starting with the safest approa
       const solution = this.parseSolution(fullResponse, query);
       onComplete?.(fullResponse, solution);
 
-      return { response: fullResponse, solution };
+      return { response: fullResponse, solution, isFromLlama: true };
     } catch (error) {
-      console.error("Llama API error:", error);
+      let errorMessage = "Unknown error";
+
+      if (error instanceof Error) {
+        if (error.name === "AbortError") {
+          errorMessage = "Request timeout - Generation took too long";
+        } else if (
+          error.message.includes("CORS") ||
+          error.message.includes("fetch")
+        ) {
+          errorMessage =
+            "CORS/Network error - Cannot connect to Ollama from this environment";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      console.error("Llama API error:", errorMessage);
+      onError?.(errorMessage);
+
       // Fallback to mock response
-      return this.mockResponse(query, onStream, onComplete);
+      const result = await this.mockResponse(query, onStream, onComplete);
+      return { ...result, isFromLlama: false, error: errorMessage };
     }
   }
 
@@ -146,6 +209,11 @@ Always provide multiple solutions when possible, starting with the safest approa
   ): Promise<{ response: string; solution: ParsedSolution }> {
     const mockResponses = this.generateMockResponse(query);
     let fullResponse = "";
+
+    // Add a note that this is a mock response
+    const mockPrefix = "🔄 **Simulated Response** (Llama not available)\n\n";
+    onStream?.(mockPrefix);
+    fullResponse += mockPrefix;
 
     // Simulate streaming
     for (const chunk of mockResponses) {
@@ -383,12 +451,38 @@ Always provide multiple solutions when possible, starting with the safest approa
     };
   }
 
-  static async testConnection(): Promise<boolean> {
+  static async testConnection(): Promise<{
+    connected: boolean;
+    error?: string;
+  }> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/tags`);
-      return response.ok;
-    } catch {
-      return false;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+      const response = await fetch(`${this.baseUrl}/api/tags`, {
+        signal: controller.signal,
+        mode: "cors",
+      });
+
+      clearTimeout(timeoutId);
+      return { connected: response.ok };
+    } catch (error) {
+      let errorMessage = "Connection failed";
+
+      if (error instanceof Error) {
+        if (error.name === "AbortError") {
+          errorMessage = "Connection timeout";
+        } else if (error.message.includes("CORS")) {
+          errorMessage =
+            "CORS policy blocks localhost access from hosted environment";
+        } else if (error.message.includes("Failed to fetch")) {
+          errorMessage = "Network error - Ollama may not be running";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      return { connected: false, error: errorMessage };
     }
   }
 }

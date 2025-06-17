@@ -98,7 +98,12 @@ export const NaturalLanguageInterface: React.FC<
       const { LlamaAPI } = await import("@/services/LlamaAPI");
 
       // Get real-time response from local Llama
-      const { response, solution } = await LlamaAPI.sendQuery(
+      const {
+        response,
+        solution,
+        isFromLlama,
+        error: llamaError,
+      } = await LlamaAPI.sendQuery(
         originalQuery,
         // onStream callback - update message content in real-time
         (chunk: string) => {
@@ -181,15 +186,18 @@ export const NaturalLanguageInterface: React.FC<
       const analysisMessage: ConversationMessage = {
         id: `analysis-${Date.now()}`,
         type: "system",
-        content: `🤖 **Llama 3.1:8b Analysis Complete**
+        content: `${isFromLlama ? "🤖 **Llama 3.1:8b Analysis Complete**" : "🔄 **Simulated Analysis Complete**"}
 
+${!isFromLlama && llamaError ? `⚠️ **Connection Issue:** ${llamaError}\n` : ""}
 ✅ **Category:** ${solution.category}
 ⚡ **Severity:** ${solution.severity}
 🛡️ **Risk Level:** ${solution.riskLevel}
 ⏱️ **Estimated Fix Time:** ${solution.estimatedTime}
 🔧 **CLI Commands Available:** ${solution.cliCommands.length}
 
-${solution.cliCommands.length > 0 ? "Auto-fix and review buttons are now available!" : "No automated fixes available for this query."}`,
+${solution.cliCommands.length > 0 ? "Auto-fix and review buttons are now available!" : "No automated fixes available for this query."}
+
+${!isFromLlama ? "\n💡 **Note:** Using simulated responses. To enable real Llama analysis, ensure Ollama is running locally and accessible." : ""}`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, analysisMessage]);
