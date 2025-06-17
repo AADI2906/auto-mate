@@ -31,9 +31,18 @@ import {
 const Index = () => {
   const [activeView, setActiveView] = useState("overview");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
+  // Track visited sections and new counts
+  const [visitedSections, setVisitedSections] = useState<Set<string>>(
+    new Set(),
+  );
+  const [newSecurityAlerts, setNewSecurityAlerts] = useState(0);
+  const [newAIInsights, setNewAIInsights] = useState(0);
+
+  // Initial counts (simulating existing alerts/insights)
+  const [initialSecurityCount] = useState(23);
+  const [initialAICount] = useState(12);
   const quickStats = [
     {
       title: "Network Health",
@@ -130,6 +139,68 @@ const Index = () => {
     }
   };
 
+  // Handle section navigation and mark as visited
+  const handleSectionClick = (sectionId: string) => {
+    setActiveView(sectionId);
+
+    // Mark section as visited and clear new counts
+    if (!visitedSections.has(sectionId)) {
+      setVisitedSections((prev) => new Set([...prev, sectionId]));
+
+      // Clear new counts when first visiting
+      if (sectionId === "security") {
+        setNewSecurityAlerts(0);
+      } else if (sectionId === "ai") {
+        setNewAIInsights(0);
+      }
+    }
+  };
+
+  // Calculate badge count for each section
+  const getBadgeCount = (sectionId: string) => {
+    switch (sectionId) {
+      case "security":
+        if (!visitedSections.has("security")) {
+          return initialSecurityCount.toString();
+        }
+        return newSecurityAlerts > 0 ? newSecurityAlerts.toString() : null;
+
+      case "ai":
+        if (!visitedSections.has("ai")) {
+          return initialAICount.toString();
+        }
+        return newAIInsights > 0 ? newAIInsights.toString() : null;
+
+      default:
+        return null;
+    }
+  };
+
+  // Simulate new alerts/insights coming in (for demonstration)
+  const addNewSecurityAlert = () => {
+    setNewSecurityAlerts((prev) => prev + 1);
+  };
+
+  const addNewAIInsight = () => {
+    setNewAIInsights((prev) => prev + 1);
+  };
+
+  // Simulate new alerts/insights coming in periodically (optional - for demo)
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      // Randomly add new alerts or insights (10% chance every 30 seconds)
+      if (Math.random() < 0.1) {
+        if (Math.random() < 0.5) {
+          addNewSecurityAlert();
+        } else {
+          addNewAIInsight();
+        }
+      }
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
@@ -202,6 +273,27 @@ const Index = () => {
               <Settings className="h-5 w-5" />
             </Button>
 
+            {/* Demo buttons for testing new alerts (can be removed in production) */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-shrink-0 text-xs"
+              onClick={addNewSecurityAlert}
+              title="Simulate new security alert"
+            >
+              +🛡️
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-shrink-0 text-xs"
+              onClick={addNewAIInsight}
+              title="Simulate new AI insight"
+            >
+              +🧠
+            </Button>
+
             <div className="flex items-center gap-2 pl-2 lg:pl-4 border-l border-border">
               <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
                 <Users className="h-4 w-4 text-primary" />
@@ -228,44 +320,40 @@ const Index = () => {
                 id: "overview",
                 label: "Overview",
                 icon: Activity,
-                badge: null,
               },
               {
                 id: "ai-assistant",
                 label: "AI Assistant",
                 icon: MessageSquare,
-                badge: null,
               },
               {
                 id: "security",
                 label: "Security Alerts",
                 icon: Shield,
-                badge: activeView === "security" ? null : "23",
               },
               {
                 id: "ai",
                 label: "AI Insights",
                 icon: Brain,
-                badge: activeView === "ai" ? null : "12",
               },
               {
                 id: "metrics",
                 label: "Metrics",
                 icon: TrendingUp,
-                badge: null,
               },
               {
                 id: "system",
                 label: "System Monitor",
                 icon: Activity,
-                badge: null,
               },
             ].map((item) => {
               const Icon = item.icon;
+              const badgeCount = getBadgeCount(item.id);
+
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveView(item.id)}
+                  onClick={() => handleSectionClick(item.id)}
                   className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
                     activeView === item.id
                       ? "bg-primary text-primary-foreground"
@@ -276,9 +364,9 @@ const Index = () => {
                   {!sidebarCollapsed && (
                     <>
                       <span className="font-medium truncate">{item.label}</span>
-                      {item.badge && (
+                      {badgeCount && (
                         <Badge className="ml-auto bg-red-500 text-white text-xs flex-shrink-0">
-                          {item.badge}
+                          {badgeCount}
                         </Badge>
                       )}
                     </>
