@@ -180,6 +180,16 @@ export const NaturalLanguageInterface: React.FC<
           }
           setShowDashboard(true);
         },
+        // onError callback - handle connection issues
+        (errorMessage: string) => {
+          const errorNotification: ConversationMessage = {
+            id: `error-notify-${Date.now()}`,
+            type: "system",
+            content: `⚠️ **Connection Warning:** ${errorMessage}\n\nFalling back to simulated responses...`,
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, errorNotification]);
+        },
       );
 
       // Add system message with analysis summary
