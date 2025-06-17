@@ -221,11 +221,11 @@ export const DynamicIncidentDashboard: React.FC<
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleExport}>
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleShare}>
               <Share className="h-4 w-4 mr-2" />
               Share
             </Button>
