@@ -273,13 +273,13 @@ export const NaturalLanguageInterface: React.FC<
   return (
     <div className="flex flex-col h-full">
       {/* Chat Header */}
-      <Card className="p-4 bg-background/50 backdrop-blur border-border/50 rounded-b-none">
+      <Card className="p-4 bg-background/50 backdrop-blur border-border/50 rounded-b-none border-b-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
               <Brain className="h-6 w-6 text-primary" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h3 className="font-semibold">AI Security Assistant</h3>
               <p className="text-xs text-muted-foreground">
                 Powered by LLM + Multi-Agent System
@@ -287,25 +287,46 @@ export const NaturalLanguageInterface: React.FC<
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowDashboard(!showDashboard)}
               disabled={!activeContext}
+              className="hidden sm:flex"
             >
-              <Search className="h-4 w-4 mr-2" />
-              Dashboard
+              <Search className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Dashboard</span>
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowRemediation(!showRemediation)}
               disabled={!activeContext || !shouldShowRemediation(activeContext)}
+              className="hidden sm:flex"
             >
-              <Lightbulb className="h-4 w-4 mr-2" />
-              Remediation
+              <Lightbulb className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Remediation</span>
             </Button>
+            {/* Mobile menu for smaller screens */}
+            <div className="flex sm:hidden gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDashboard(!showDashboard)}
+                disabled={!activeContext}
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowRemediation(!showRemediation)}
+                disabled={!activeContext || !shouldShowRemediation(activeContext)}
+              >
+                <Lightbulb className="h-4 w-4" />
+              </Button>
+            </div>
             <Button variant="ghost" size="sm">
               <Settings className="h-4 w-4" />
             </Button>
@@ -313,21 +334,22 @@ export const NaturalLanguageInterface: React.FC<
         </div>
 
         {activeContext && (
-          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/20">
-            <Badge variant="outline">
+          <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border/20">
+            <Badge variant="outline" className="text-xs">
               Active Investigation: {activeContext.id}
             </Badge>
-            <Badge className="text-orange-400 bg-orange-400/10">
+            <Badge className="text-orange-400 bg-orange-400/10 text-xs">
               {activeContext.status}
             </Badge>
-            <Badge className="text-red-400 bg-red-400/10">
+            <Badge className="text-red-400 bg-red-400/10 text-xs">
               {activeContext.severity}
             </Badge>
           </div>
         )}
       </Card>
 
-      <div className="flex flex-1 gap-4 p-4 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-col md:flex-row flex-1 gap-4 p-4 overflow-hidden">
         {/* Chat Interface */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Messages */}
