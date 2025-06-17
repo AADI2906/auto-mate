@@ -701,14 +701,14 @@ export const RemediationWorkflow: React.FC<RemediationWorkflowProps> = ({
               <AlertTriangle className="h-5 w-5 text-orange-400" />
               Approve Remediation Action
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription asChild>
               {selectedAction && (
                 <div className="space-y-3">
-                  <p>
+                  <div>
                     You are about to execute:{" "}
                     <strong>{selectedAction.title}</strong>
-                  </p>
-                  <p>{selectedAction.description}</p>
+                  </div>
+                  <div>{selectedAction.description}</div>
                   <div className="bg-muted/20 p-3 rounded-lg">
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
@@ -731,10 +731,10 @@ export const RemediationWorkflow: React.FC<RemediationWorkflowProps> = ({
                       </div>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground">
                     This action will execute {selectedAction.steps.length} steps
                     and may impact system availability.
-                  </p>
+                  </div>
                 </div>
               )}
             </AlertDialogDescription>
