@@ -30,8 +30,11 @@ import {
 } from "lucide-react";
 
 const Index = () => {
-  const [activeView, setActiveView] = useState("overview");
+  const [activeView, setActiveView] = useState("chat");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeIncident, setActiveIncident] = useState<IncidentContext | null>(
+    null,
+  );
 
   const quickStats = [
     {
