@@ -332,8 +332,9 @@ export const DynamicIncidentDashboard: React.FC<
             <TabsTrigger value="telemetry" className="text-xs lg:text-sm">Telemetry</TabsTrigger>
           </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TabsContent value="overview" className="flex-1 min-h-0 overflow-auto">
+          <div className="space-y-6 p-1">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
             {/* Event Timeline Chart */}
             <Card className="p-6 bg-background/50 backdrop-blur border-border/50">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
