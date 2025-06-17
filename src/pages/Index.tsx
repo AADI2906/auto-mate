@@ -179,32 +179,36 @@ const Index = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="relative hidden md:block">
+          <div className="flex items-center gap-2 lg:gap-4 flex-shrink-0">
+            <div className="relative hidden lg:block">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search networks, alerts, insights..."
-                className="pl-10 pr-4 py-2 bg-background/50 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-80"
+                className="pl-10 pr-4 py-2 bg-background/50 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-64 xl:w-80"
               />
             </div>
 
-            <Button variant="ghost" size="sm" className="relative">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="relative flex-shrink-0"
+            >
               <Bell className="h-5 w-5" />
               <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
                 3
               </Badge>
             </Button>
 
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="flex-shrink-0">
               <Settings className="h-5 w-5" />
             </Button>
 
-            <div className="flex items-center gap-2 pl-4 border-l border-border">
-              <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+            <div className="flex items-center gap-2 pl-2 lg:pl-4 border-l border-border">
+              <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
                 <Users className="h-4 w-4 text-primary" />
               </div>
-              <div className="hidden sm:block">
+              <div className="hidden md:block min-w-0">
                 <p className="text-sm font-medium">Security Admin</p>
                 <p className="text-xs text-muted-foreground">Online</p>
               </div>
