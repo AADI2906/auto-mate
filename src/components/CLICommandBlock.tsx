@@ -18,12 +18,18 @@ interface CLICommandBlockProps {
   commands: string[];
   title?: string;
   description?: string;
+  metadata?: {
+    data_type: string;
+    expected_output: string;
+    key_metrics: string[];
+  };
 }
 
 export const CLICommandBlock: React.FC<CLICommandBlockProps> = ({
   commands,
   title = "CLI Commands",
   description,
+  metadata,
 }) => {
   const [executionStatus, setExecutionStatus] = useState<{
     [key: string]: "idle" | "executing" | "success" | "error";
@@ -330,6 +336,29 @@ export const CLICommandBlock: React.FC<CLICommandBlockProps> = ({
           );
         })}
       </div>
+
+      {/* Metadata display */}
+      {metadata && (
+        <div className="text-xs bg-blue-500/10 border border-blue-500/20 p-3 rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <Info className="h-3 w-3 text-blue-400" />
+            <span className="font-medium text-blue-400">Expected Results</span>
+          </div>
+          <div className="space-y-1 text-blue-300">
+            <div>
+              <strong>Data Type:</strong> {metadata.data_type}
+            </div>
+            <div>
+              <strong>Output:</strong> {metadata.expected_output}
+            </div>
+            {metadata.key_metrics && metadata.key_metrics.length > 0 && (
+              <div>
+                <strong>Key Metrics:</strong> {metadata.key_metrics.join(", ")}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Platform-specific help */}
       <div className="text-xs text-muted-foreground bg-muted/20 p-2 rounded border">

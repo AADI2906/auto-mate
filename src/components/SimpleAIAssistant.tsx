@@ -291,18 +291,26 @@ Please try again or rephrase your question.`,
     navigator.clipboard.writeText(text);
   };
 
-  // Extract CLI commands from message content
-  const extractCLICommands = (content: string): string[] => {
+  // Extract CLI commands and metadata from message content
+  const extractCLICommands = (
+    content: string,
+  ): {
+    commands: string[];
+    metadata?: {
+      data_type: string;
+      expected_output: string;
+      key_metrics: string[];
+    };
+  } => {
     const commands: string[] = [];
+    let metadata: any = null;
 
-    // Extract from code blocks
-    const codeBlocks = content.match(
-      /```(?:bash|shell|sh|cmd)?\n([\s\S]*?)\n```/g,
-    );
-    if (codeBlocks) {
-      codeBlocks.forEach((block) => {
+    // Extract from bash code blocks
+    const bashBlocks = content.match(/```bash\n([\s\S]*?)\n```/g);
+    if (bashBlocks) {
+      bashBlocks.forEach((block) => {
         const blockCommands = block
-          .replace(/```(?:bash|shell|sh|cmd)?\n|\n```/g, "")
+          .replace(/```bash\n|\n```/g, "")
           .split("\n")
           .filter((line) => {
             const trimmed = line.trim();
@@ -310,7 +318,40 @@ Please try again or rephrase your question.`,
               trimmed &&
               !trimmed.startsWith("#") &&
               !trimmed.startsWith("//") &&
-              !trimmed.startsWith("echo") &&
+              trimmed.length > 1
+            );
+          })
+          .map((cmd) => cmd.trim());
+        commands.push(...blockCommands);
+      });
+    }
+
+    // Extract JSON metadata blocks
+    const jsonBlocks = content.match(/```json\n([\s\S]*?)\n```/g);
+    if (jsonBlocks && jsonBlocks.length > 0) {
+      try {
+        const jsonContent = jsonBlocks[0].replace(/```json\n|\n```/g, "");
+        metadata = JSON.parse(jsonContent);
+      } catch (error) {
+        console.warn("Failed to parse JSON metadata:", error);
+      }
+    }
+
+    // Extract other code blocks (shell, sh, cmd)
+    const otherCodeBlocks = content.match(
+      /```(?:shell|sh|cmd)\n([\s\S]*?)\n```/g,
+    );
+    if (otherCodeBlocks) {
+      otherCodeBlocks.forEach((block) => {
+        const blockCommands = block
+          .replace(/```(?:shell|sh|cmd)\n|\n```/g, "")
+          .split("\n")
+          .filter((line) => {
+            const trimmed = line.trim();
+            return (
+              trimmed &&
+              !trimmed.startsWith("#") &&
+              !trimmed.startsWith("//") &&
               trimmed.length > 1
             );
           })
@@ -335,12 +376,17 @@ Please try again or rephrase your question.`,
       });
     }
 
-    return [...new Set(commands)]; // Remove duplicates
+    return {
+      commands: [...new Set(commands)], // Remove duplicates
+      metadata,
+    };
   };
 
   // Render message content with CLI command blocks
   const renderMessageContent = (message: Message) => {
-    const cliCommands = extractCLICommands(message.content);
+    const { commands: cliCommands, metadata } = extractCLICommands(
+      message.content,
+    );
 
     if (cliCommands.length === 0 && message.type === "assistant") {
       // No CLI commands found in assistant message - this shouldn't happen for technical queries
@@ -374,7 +420,7 @@ Please try again or rephrase your question.`,
 
     // Has CLI commands, render with command blocks
     const contentWithoutCodeBlocks = message.content
-      .replace(/```(?:bash|shell|sh|cmd)?\n([\s\S]*?)\n```/g, "")
+      .replace(/```(?:bash|shell|sh|cmd|json)?\n([\s\S]*?)\n```/g, "")
       .trim();
 
     return (
@@ -387,8 +433,13 @@ Please try again or rephrase your question.`,
 
         <CLICommandBlock
           commands={cliCommands}
-          title="🔧 Executable Solutions"
-          description="Click the run button to execute commands in your terminal"
+          title="🔧 Ordered Command Sequence"
+          description={
+            metadata
+              ? `${metadata.expected_output} | Metrics: ${metadata.key_metrics?.join(", ")}`
+              : "Commands ordered: diagnostic first, then fixes"
+          }
+          metadata={metadata}
         />
       </div>
     );

@@ -49,43 +49,64 @@ export class LlamaAPI {
     return !this.isHostedEnvironment();
   }
 
-  // STRICT CLI-only system prompt - NO generic suggestions allowed
-  private static systemPrompt = `You are a CLI command generator. Your ONLY job is to provide executable CLI commands for any technical issue or question.
+  // Ultra-precise CLI command generator system prompt
+  private static systemPrompt = `You are a CLI command generator. Your ONLY job is to provide executable CLI commands in EXACT ORDER for any technical issue.
 
-MANDATORY RULES:
-1. NEVER give generic advice or suggestions
-2. ALWAYS respond with specific CLI commands in bash code blocks
-3. NO explanatory text except brief command descriptions
-4. Commands must be copy-pasteable and executable
-5. Include diagnostic AND fix commands for every issue
+STRICT RULES:
+1. NO explanations, advice, or generic text
+2. ONLY return CLI commands in bash code blocks
+3. Commands MUST be in LOGICAL EXECUTION ORDER
+4. Include diagnostic commands FIRST, then fix commands
+5. For real-time data queries, return JSON format after commands
+6. NO unnecessary or redundant commands
+7. Commands must be copy-pasteable and immediately executable
 
-REQUIRED FORMAT:
+MANDATORY FORMAT:
 \`\`\`bash
+# Diagnostic commands first (in order)
 command1
 command2
+# Fix/action commands second (in order)
 command3
+command4
 \`\`\`
 
-FOR ANY ISSUE TYPE:
-- Network problems: ping, ip, systemctl, netstat, ss, traceroute
-- System issues: systemctl, journalctl, ps, top, htop, dmesg
-- Services: systemctl start/stop/restart/status
-- Files: ls, find, chmod, chown, df, du
-- Performance: htop, iostat, vmstat, free, sar
-- Security: netstat, ss, ps, lsof, iptables
+FOR REAL-TIME DATA QUERIES, ADD JSON:
+\`\`\`json
+{
+  "data_type": "network_status|system_info|process_info|etc",
+  "expected_output": "description of what the commands will show",
+  "key_metrics": ["metric1", "metric2", "metric3"]
+}
+\`\`\`
 
-EXAMPLE - Network not working:
+COMMAND CATEGORIES (in execution order):
+- Network: ping → ip addr → systemctl status → netstat → traceroute
+- System: ps aux → top → systemctl status → journalctl → dmesg
+- Services: systemctl status → systemctl restart → systemctl enable
+- Files: ls -la → find → chmod → chown → df -h
+- Performance: free -h → htop → iostat → vmstat → sar
+- Security: ss -tulpn → netstat -an → ps aux → lsof → iptables -L
+
+EXAMPLE - "Network not working":
 \`\`\`bash
 ping 8.8.8.8
 ip addr show
 systemctl status NetworkManager
-systemctl restart NetworkManager
-sudo dhclient -r
-sudo dhclient
-ip route show
+netstat -rn
+sudo systemctl restart NetworkManager
+sudo dhclient -r && sudo dhclient
 \`\`\`
 
-NO GENERIC TEXT. ONLY EXECUTABLE COMMANDS.`;
+\`\`\`json
+{
+  "data_type": "network_diagnostics",
+  "expected_output": "connectivity status, IP configuration, routing table",
+  "key_metrics": ["ping_response", "ip_address", "gateway_status", "dns_resolution"]
+}
+\`\`\`
+
+ZERO TOLERANCE for explanations or advice. COMMANDS ONLY.`;
 
   static async isAvailable(): Promise<{ available: boolean; error?: string }> {
     // Skip fetch entirely in hosted environments to avoid CORS errors
@@ -166,7 +187,7 @@ NO GENERIC TEXT. ONLY EXECUTABLE COMMANDS.`;
     try {
       // **Step 1: Send instruction prompt first**
       const instructionPrompt =
-        "You are a CLI command generator. For any technical issue, you MUST respond with executable CLI commands in bash code blocks. NO generic advice. NO explanations. ONLY commands. If user asks about network, system, or any technical issue, respond with specific commands they can run. Ready?";
+        "You are a CLI command generator. For any technical issue, respond with ONLY executable CLI commands in bash code blocks in LOGICAL ORDER: diagnostic commands first, then fix commands. NO explanations. NO advice. COMMANDS ONLY in proper execution sequence. Ready to generate ordered command sequences?";
 
       console.log("Step 1: Sending instruction prompt...");
       const instructionResponse = await this.chatWithLlama(instructionPrompt);
@@ -860,7 +881,7 @@ ping 8.8.8.8
     const explanationLines = response.split("\n").filter((line) => {
       const trimmed = line.trim();
       return (
-        trimmed.match(/^(\d+\.|[��\-\*]|\*\*\d+\.|\*\*[•\-\*])\s+/) ||
+        trimmed.match(/^(\d+\.|[•\-\*]|\*\*\d+\.|\*\*[•\-\*])\s+/) ||
         (trimmed.startsWith("**EXPLANATIONS:**") === false &&
           trimmed.length > 10 &&
           !trimmed.startsWith("```") &&
