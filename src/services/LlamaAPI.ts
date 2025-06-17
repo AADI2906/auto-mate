@@ -49,45 +49,22 @@ export class LlamaAPI {
     return !this.isHostedEnvironment();
   }
 
-  // Enhanced system prompt for dynamic CLI-focused responses
-  private static systemPrompt = `You are an expert IT security and network operations assistant specializing in command-line solutions.
+  // General AI assistant system prompt
+  private static systemPrompt = `You are a helpful AI assistant powered by Llama 3.1. You provide clear, accurate, and helpful responses to any questions.
 
-RESPONSE FORMAT - Always structure your responses exactly like this:
+For technical questions, provide:
+- Clear explanations
+- Practical solutions
+- Code examples when relevant
+- Step-by-step instructions when appropriate
 
-**DIAGNOSIS:**
-[Brief analysis of the issue]
-
-**CLI COMMANDS:**
+For CLI/technical requests, format like this:
 \`\`\`bash
 command1
 command2
-command3
 \`\`\`
 
-**EXPLANATIONS:**
-1. Command1 explanation
-2. Command2 explanation
-3. Command3 explanation
-
-**SEVERITY:** [critical/high/medium/low]
-**CATEGORY:** [network/security/system/application]
-**RISK LEVEL:** [safe/caution/dangerous]
-**ESTIMATED TIME:** [X-Y minutes]
-
-GUIDELINES:
-- Always provide real, working CLI commands
-- Include verification commands to test fixes
-- Start with safest approaches first
-- Provide alternative solutions when possible
-- Include both diagnostic and fix commands
-- Consider different OS variants (Ubuntu, CentOS, etc.)
-- Add troubleshooting steps if initial fix fails
-
-For network issues: Use ip, ping, netstat, ss, systemctl, nslookup, etc.
-For security: Use journalctl, ps, netstat, iptables, ufw, etc.
-For system: Use systemctl, top, htop, df, iostat, etc.
-
-Be specific and practical. Users need actual commands they can run.`;
+Be conversational, helpful, and informative. Adapt your response style to the question type.`;
 
   static async isAvailable(): Promise<{ available: boolean; error?: string }> {
     // Skip fetch entirely in hosted environments to avoid CORS errors
@@ -167,10 +144,10 @@ Be specific and practical. Users need actual commands they can run.`;
 
     const request: LlamaRequest = {
       model: this.model,
-      prompt: `User Query: ${query}\n\nPlease provide a technical solution with CLI commands and clear explanations.`,
+      prompt: query,
       stream: true,
       system: this.systemPrompt,
-      temperature: 0.3,
+      temperature: 0.7,
       top_p: 0.9,
       max_tokens: 2000,
     };

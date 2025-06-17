@@ -33,7 +33,7 @@ export const SimpleAIAssistant: React.FC = () => {
 I'm your local AI assistant powered by Llama 3.1:8b. I can help you with:
 
 • **Technical Support** - Network issues, system troubleshooting, CLI commands
-• **Code Assistance** - Programming help, debugging, best practices  
+• **Code Assistance** - Programming help, debugging, best practices
 • **Security Analysis** - Threat assessment, security recommendations
 • **System Administration** - Server management, configuration, monitoring
 • **General Questions** - Information, explanations, guidance
@@ -106,10 +106,14 @@ Ask me anything! I'll provide detailed, practical responses.`,
       // Import and use LlamaAPI
       const { LlamaAPI } = await import("@/services/LlamaAPI");
 
-      const { response, isFromLlama, error } = await LlamaAPI.sendQuery(
+      console.log("Sending query to LlamaAPI:", originalQuery);
+      let responseReceived = false;
+
+      const result = await LlamaAPI.sendQuery(
         originalQuery,
         // onStream callback - update message content in real-time
         (chunk: string) => {
+          responseReceived = true;
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === streamingMessageId
@@ -119,14 +123,14 @@ Ask me anything! I'll provide detailed, practical responses.`,
           );
         },
         // onComplete callback
-        (fullResponse: string) => {
+        (fullResponse: string, parsedSolution) => {
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === streamingMessageId
                 ? {
                     ...msg,
                     content: fullResponse,
-                    isFromLlama: isFromLlama,
+                    isFromLlama: result?.isFromLlama ?? false,
                   }
                 : msg,
             ),
@@ -143,6 +147,36 @@ Ask me anything! I'll provide detailed, practical responses.`,
           setMessages((prev) => [...prev, errorNotification]);
         },
       );
+
+      // If no streaming response was received, use the final response
+      if (!responseReceived && result?.response) {
+        console.log("Using final response:", result.response);
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === streamingMessageId
+              ? {
+                  ...msg,
+                  content: result.response,
+                  isFromLlama: result.isFromLlama,
+                }
+              : msg,
+          ),
+        );
+      } else if (!responseReceived) {
+        // If no response at all, show a fallback message
+        console.log("No response received, showing fallback");
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === streamingMessageId
+              ? {
+                  ...msg,
+                  content: `I received your message: "${originalQuery}"\n\nHowever, I'm having trouble generating a response right now. This could be due to:\n\n• Llama service not running locally\n• Network connectivity issues\n• API response format issues\n\nPlease try:\n1. Check if Ollama is running: \`ollama serve\`\n2. Verify Llama 3.1:8b is installed: \`ollama pull llama3.1:8b\`\n3. Try asking a simpler question\n\nI'm here to help once the connection is established!`,
+                  isFromLlama: false,
+                }
+              : msg,
+          ),
+        );
+      }
     } catch (error) {
       // Remove the streaming message and add error
       setMessages((prev) =>
