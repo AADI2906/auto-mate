@@ -529,9 +529,31 @@ export const NaturalLanguageInterface: React.FC<
                   <div className="p-3 lg:p-4">
                     <DynamicIncidentDashboard
                       context={activeContext}
-                      onRefresh={() => {
-                        // Refresh context
-                        console.log("Refreshing context...");
+                      onRefresh={async () => {
+                        // Re-run investigation with fresh data
+                        setIsProcessing(true);
+                        try {
+                          const refreshedContext =
+                            await AgentOrchestrator.orchestrateInvestigation(
+                              activeContext.query,
+                            );
+                          setActiveContext(refreshedContext);
+                          onContextChange?.(refreshedContext);
+
+                          // Add refresh message
+                          const refreshMessage: ConversationMessage = {
+                            id: `refresh-${Date.now()}`,
+                            type: "system",
+                            content:
+                              "🔄 Context refreshed with latest telemetry data. Updated analysis available.",
+                            timestamp: new Date(),
+                          };
+                          setMessages((prev) => [...prev, refreshMessage]);
+                        } catch (error) {
+                          console.error("Refresh failed:", error);
+                        } finally {
+                          setIsProcessing(false);
+                        }
                       }}
                     />
                   </div>
