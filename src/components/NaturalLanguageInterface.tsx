@@ -38,15 +38,56 @@ interface NaturalLanguageInterfaceProps {
 export const NaturalLanguageInterface: React.FC<
   NaturalLanguageInterfaceProps
 > = ({ onContextChange }) => {
-  const [messages, setMessages] = useState<ConversationMessage[]>([
-    {
-      id: "welcome",
-      type: "assistant",
-      content:
-        '🤖 **Welcome to NeuroSecure AI Assistant**\n\nPowered by **Llama 3.1:8b** running locally on your machine, I provide real-time analysis and automated CLI-based solutions.\n\n**I can help you with:**\n• Network troubleshooting (VPN, connectivity, performance)\n• Security incident analysis and response\n• System performance optimization\n• Automated remediation with CLI commands\n\n**Try asking:**\n• "VPN not working"\n• "Network is slow"\n• "Authentication issues"\n• "Check system performance"\n\nI\'ll provide instant responses with specific CLI commands and auto-fix options! 🚀',
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<ConversationMessage[]>(() => {
+    // Initialize with environment-aware welcome message
+    const getWelcomeMessage = async () => {
+      try {
+        const { LlamaAPI } = await import("@/services/LlamaAPI");
+        const connectionInfo = LlamaAPI.getConnectionInfo();
+
+        return `🤖 **Welcome to NeuroSecure AI Assistant**
+
+${
+  connectionInfo.environment === "local"
+    ? "🟢 **Local Environment Detected** - Real Llama 3.1:8b integration available!"
+    : "🟡 **Hosted Environment** - Using high-quality simulated AI responses"
+}
+
+**I can help you with:**
+• Network troubleshooting (VPN, connectivity, performance)
+• Security incident analysis and response
+• System performance optimization
+• Automated remediation with CLI commands
+
+**Try asking:**
+• "VPN not working"
+• "Network is slow"
+• "Authentication issues"
+• "Check system performance"
+
+I'll provide instant responses with specific CLI commands and auto-fix options! 🚀
+
+${
+  connectionInfo.environment === "hosted"
+    ? "\n💡 **Note:** To enable real Llama integration, run this app locally with Ollama installed."
+    : ""
+}`;
+      } catch {
+        return "🤖 **Welcome to NeuroSecure AI Assistant**\n\nI provide real-time analysis and automated CLI-based solutions for your IT and security needs. Try asking about network issues, security incidents, or system performance!";
+      }
+    };
+
+    // Return initial state synchronously, update with proper message async
+    return [
+      {
+        id: "welcome",
+        type: "assistant",
+        content:
+          "🤖 **Welcome to NeuroSecure AI Assistant**\n\nInitializing...",
+        timestamp: new Date(),
+      },
+    ];
+  });
   const [currentInput, setCurrentInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeContext, setActiveContext] = useState<IncidentContext | null>(
@@ -67,6 +108,54 @@ export const NaturalLanguageInterface: React.FC<
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Update welcome message with environment info
+  useEffect(() => {
+    const updateWelcomeMessage = async () => {
+      try {
+        const { LlamaAPI } = await import("@/services/LlamaAPI");
+        const connectionInfo = LlamaAPI.getConnectionInfo();
+
+        const welcomeContent = `🤖 **Welcome to NeuroSecure AI Assistant**
+
+${
+  connectionInfo.environment === "local"
+    ? "🟢 **Local Environment Detected** - Real Llama 3.1:8b integration available!"
+    : "🟡 **Hosted Environment** - Using high-quality simulated AI responses"
+}
+
+**I can help you with:**
+• Network troubleshooting (VPN, connectivity, performance)
+• Security incident analysis and response
+• System performance optimization
+• Automated remediation with CLI commands
+
+**Try asking:**
+• "VPN not working"
+• "Network is slow"
+• "Authentication issues"
+• "Check system performance"
+
+I'll provide instant responses with specific CLI commands and auto-fix options! 🚀
+
+${
+  connectionInfo.environment === "hosted"
+    ? "\n💡 **Note:** To enable real Llama integration, run this app locally with Ollama installed."
+    : ""
+}`;
+
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === "welcome" ? { ...msg, content: welcomeContent } : msg,
+          ),
+        );
+      } catch (error) {
+        console.warn("Failed to update welcome message:", error);
+      }
+    };
+
+    updateWelcomeMessage();
+  }, []);
 
   const handleSendMessage = async () => {
     if (!currentInput.trim() || isProcessing) return;
@@ -196,7 +285,7 @@ export const NaturalLanguageInterface: React.FC<
       const analysisMessage: ConversationMessage = {
         id: `analysis-${Date.now()}`,
         type: "system",
-        content: `${isFromLlama ? "🤖 **Llama 3.1:8b Analysis Complete**" : "🔄 **Simulated Analysis Complete**"}
+        content: `${isFromLlama ? "🤖 **Llama 3.1:8b Analysis Complete**" : "�� **Simulated Analysis Complete**"}
 
 ${!isFromLlama && llamaError ? `⚠️ **Connection Issue:** ${llamaError}\n` : ""}
 ✅ **Category:** ${solution.category}

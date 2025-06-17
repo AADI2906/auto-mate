@@ -30,6 +30,25 @@ export class LlamaAPI {
   private static baseUrl = "http://localhost:11434";
   private static model = "llama3.1:8b";
 
+  // Environment detection to avoid CORS issues
+  private static isHostedEnvironment(): boolean {
+    try {
+      // Check if we're in a hosted environment (not localhost)
+      const hostname = window.location.hostname;
+      return (
+        hostname !== "localhost" &&
+        hostname !== "127.0.0.1" &&
+        !hostname.startsWith("192.168.")
+      );
+    } catch {
+      return true; // Assume hosted if we can't determine
+    }
+  }
+
+  private static canAccessLocalhost(): boolean {
+    return !this.isHostedEnvironment();
+  }
+
   // System prompt optimized for IT/security operations
   private static systemPrompt = `You are an expert IT security and network operations assistant. Your responses should be:
 
@@ -55,6 +74,15 @@ Common scenarios:
 Always provide multiple solutions when possible, starting with the safest approach.`;
 
   static async isAvailable(): Promise<{ available: boolean; error?: string }> {
+    // Skip fetch entirely in hosted environments to avoid CORS errors
+    if (!this.canAccessLocalhost()) {
+      return {
+        available: false,
+        error:
+          "Running in hosted environment - localhost access blocked by CORS policy",
+      };
+    }
+
     try {
       // Add timeout and better error handling
       const controller = new AbortController();
@@ -80,7 +108,7 @@ Always provide multiple solutions when possible, starting with the safest approa
           error.message.includes("fetch")
         ) {
           errorMessage =
-            "CORS/Network error - Cannot connect to localhost:11434 from hosted environment";
+            "CORS/Network error - Cannot connect to localhost:11434";
         } else if (error.message.includes("Failed to fetch")) {
           errorMessage =
             "Network error - Ollama server may not be running or accessible";
@@ -105,6 +133,14 @@ Always provide multiple solutions when possible, starting with the safest approa
     isFromLlama: boolean;
     error?: string;
   }> {
+    // Skip entirely in hosted environments to avoid CORS errors
+    if (!this.canAccessLocalhost()) {
+      const error = "Running in hosted environment - using simulated responses";
+      onError?.(error);
+      const result = await this.mockResponse(query, onStream, onComplete);
+      return { ...result, isFromLlama: false, error };
+    }
+
     // Check if Llama is available, fallback to mock if not
     const availabilityCheck = await this.isAvailable();
     if (!availabilityCheck.available) {
@@ -455,6 +491,14 @@ Always provide multiple solutions when possible, starting with the safest approa
     connected: boolean;
     error?: string;
   }> {
+    // Skip fetch entirely in hosted environments
+    if (!this.canAccessLocalhost()) {
+      return {
+        connected: false,
+        error: "Running in hosted environment - localhost access not available",
+      };
+    }
+
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
@@ -473,8 +517,7 @@ Always provide multiple solutions when possible, starting with the safest approa
         if (error.name === "AbortError") {
           errorMessage = "Connection timeout";
         } else if (error.message.includes("CORS")) {
-          errorMessage =
-            "CORS policy blocks localhost access from hosted environment";
+          errorMessage = "CORS policy blocks localhost access";
         } else if (error.message.includes("Failed to fetch")) {
           errorMessage = "Network error - Ollama may not be running";
         } else {
@@ -483,6 +526,30 @@ Always provide multiple solutions when possible, starting with the safest approa
       }
 
       return { connected: false, error: errorMessage };
+    }
+  }
+
+  // Helper method for UI to show connection status
+  static getConnectionInfo(): {
+    canConnect: boolean;
+    environment: "local" | "hosted";
+    message: string;
+  } {
+    const isHosted = this.isHostedEnvironment();
+
+    if (isHosted) {
+      return {
+        canConnect: false,
+        environment: "hosted",
+        message: "Running in hosted environment - using simulated AI responses",
+      };
+    } else {
+      return {
+        canConnect: true,
+        environment: "local",
+        message:
+          "Local environment detected - real Llama integration available",
+      };
     }
   }
 }
