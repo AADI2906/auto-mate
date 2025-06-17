@@ -222,9 +222,9 @@ const Index = () => {
         <aside
           className={`${
             sidebarCollapsed ? "w-16" : "w-64"
-          } bg-background/50 backdrop-blur border-r border-border/50 transition-all duration-300 hidden lg:block`}
+          } bg-background/50 backdrop-blur border-r border-border/50 transition-all duration-300 hidden lg:block flex-shrink-0`}
         >
-          <nav className="p-4 space-y-2">
+          <nav className="p-3 lg:p-4 space-y-2">
             {[
               {
                 id: "chat",
