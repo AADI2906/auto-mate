@@ -8,6 +8,7 @@ import { AIInsights } from "@/components/AIInsights";
 import { SecurityAlerts } from "@/components/SecurityAlerts";
 import { MetricsDashboard } from "@/components/MetricsDashboard";
 import { RealTimeSystemDashboard } from "@/components/RealTimeSystemDashboard";
+import { SimpleAIAssistant } from "@/components/SimpleAIAssistant";
 import {
   Shield,
   Brain,
@@ -24,6 +25,7 @@ import {
   Globe,
   Users,
   Server,
+  MessageSquare,
 } from "lucide-react";
 
 const Index = () => {
@@ -229,6 +231,12 @@ const Index = () => {
                 badge: null,
               },
               {
+                id: "ai-assistant",
+                label: "AI Assistant",
+                icon: MessageSquare,
+                badge: null,
+              },
+              {
                 id: "security",
                 label: "Security Alerts",
                 icon: Shield,
@@ -283,6 +291,12 @@ const Index = () => {
 
         {/* Main Content */}
         <main className="flex-1 min-w-0 overflow-hidden">
+          {activeView === "ai-assistant" && (
+            <div className="p-6 h-full">
+              <SimpleAIAssistant />
+            </div>
+          )}
+
           {activeView === "overview" && (
             <div className="p-6 space-y-6">
               {/* Quick Stats */}
