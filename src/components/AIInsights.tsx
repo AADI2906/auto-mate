@@ -240,13 +240,38 @@ export const AIInsights: React.FC = () => {
   };
 
   const handleAcknowledge = (insightId: string) => {
+    const insight = insights.find((i) => i.id === insightId);
+    if (!insight) return;
+
     setInsights((prev) =>
-      prev.map((insight) =>
-        insight.id === insightId
-          ? { ...insight, status: "acknowledged" as const }
-          : insight,
+      prev.map((i) =>
+        i.id === insightId
+          ? {
+              ...i,
+              status: "acknowledged" as const,
+              description:
+                i.description + " [ACKNOWLEDGED: Under manual review]",
+            }
+          : i,
       ),
     );
+
+    // Add acknowledgment log
+    const acknowledgmentInsight: AIInsight = {
+      id: Date.now().toString(),
+      type: "recommendation",
+      severity: "low",
+      title: "Insight Acknowledged",
+      description: `Security team acknowledged: ${insight.title}. Manual investigation in progress.`,
+      confidence: 100,
+      timestamp: new Date(),
+      status: "new",
+      actionable: false,
+    };
+
+    setTimeout(() => {
+      setInsights((prev) => [acknowledgmentInsight, ...prev]);
+    }, 500);
   };
 
   const runFullAnalysis = () => {
