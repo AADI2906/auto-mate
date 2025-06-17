@@ -236,16 +236,23 @@ Be conversational, helpful, and informative. Adapt your response style to the qu
     onStream?: (chunk: string) => void,
     onComplete?: (fullResponse: string, parsed: ParsedSolution) => void,
   ): Promise<{ response: string; solution: ParsedSolution }> {
-    const mockResponses = this.generateMockResponse(query);
+    // Generate a simple, direct response
     let fullResponse = "";
 
-    // Add a note that this is a mock response
-    const mockPrefix = "🔄 **Simulated Response** (Llama not available)\n\n";
+    const isHosted = this.isHostedEnvironment();
+    const mockPrefix = isHosted
+      ? "🟡 **Simulated Response** (Running in hosted environment)\n\n"
+      : "🔄 **Simulated Response** (Llama not available locally)\n\n";
+
     onStream?.(mockPrefix);
     fullResponse += mockPrefix;
 
-    // Simulate streaming
-    for (const chunk of mockResponses) {
+    // Generate contextual response based on query
+    const response = this.generateSimpleResponse(query);
+
+    // Simulate streaming by sending chunks
+    const chunks = response.match(/.{1,30}/g) || [response];
+    for (const chunk of chunks) {
       await new Promise((resolve) => setTimeout(resolve, 50));
       fullResponse += chunk;
       onStream?.(chunk);
@@ -255,6 +262,69 @@ Be conversational, helpful, and informative. Adapt your response style to the qu
     onComplete?.(fullResponse, solution);
 
     return { response: fullResponse, solution };
+  }
+
+  private static generateSimpleResponse(query: string): string {
+    const queryLower = query.toLowerCase();
+
+    if (queryLower.includes("hello") || queryLower.includes("hi")) {
+      return "Hello! I'm your AI assistant. I can help with technical questions, programming, system administration, and general inquiries. What would you like to know?";
+    }
+
+    if (queryLower.includes("network") || queryLower.includes("connection")) {
+      return `I can help with network issues! For "${query}", here are some common solutions:
+
+\`\`\`bash
+ping google.com
+ip addr show
+systemctl restart NetworkManager
+\`\`\`
+
+These commands will help diagnose and fix common network problems. Would you like more specific help?`;
+    }
+
+    if (
+      queryLower.includes("code") ||
+      queryLower.includes("programming") ||
+      queryLower.includes("python") ||
+      queryLower.includes("javascript")
+    ) {
+      return `I'd be happy to help with coding! For your question about "${query}", I can provide:
+
+• Code examples and explanations
+• Debugging assistance
+• Best practices and optimization tips
+• Library and framework recommendations
+
+What specific programming challenge can I help you solve?`;
+    }
+
+    if (
+      queryLower.includes("error") ||
+      queryLower.includes("bug") ||
+      queryLower.includes("fix")
+    ) {
+      return `I can help debug that issue! For "${query}", try these troubleshooting steps:
+
+1. Check the error logs: \`journalctl -xe\`
+2. Verify service status: \`systemctl status service-name\`
+3. Review configuration files
+4. Test with minimal reproduction case
+
+Can you share more details about the specific error you're seeing?`;
+    }
+
+    // Default response
+    return `Thanks for your question: "${query}"
+
+I'm an AI assistant that can help with:
+• Technical support and troubleshooting
+• Programming and development questions
+• System administration tasks
+• Security and networking guidance
+• General information and explanations
+
+Please feel free to ask me anything specific, and I'll provide detailed, helpful responses!`;
   }
 
   private static generateMockResponse(query: string): string[] {
