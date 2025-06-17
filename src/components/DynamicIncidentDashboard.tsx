@@ -252,69 +252,91 @@ export const DynamicIncidentDashboard: React.FC<
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-full min-h-0">
       {/* Header */}
-      <Card className="p-6 bg-background/50 backdrop-blur border-border/50">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Eye className="h-6 w-6 text-primary" />
-              <div>
-                <h2 className="text-xl font-bold">Incident Analysis</h2>
-                <p className="text-sm text-muted-foreground">
+      <Card className="p-4 lg:p-6 bg-background/50 backdrop-blur border-border/50 flex-shrink-0">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <Eye className="h-5 w-5 lg:h-6 lg:w-6 text-primary flex-shrink-0" />
+              <div className="min-w-0">
+                <h2 className="text-lg lg:text-xl font-bold">
+                  Incident Analysis
+                </h2>
+                <p className="text-xs lg:text-sm text-muted-foreground truncate">
                   {context.query.originalQuery}
                 </p>
               </div>
             </div>
-            <Badge className={getSeverityColor(context.severity)}>
-              {context.severity.toUpperCase()}
-            </Badge>
-            <Badge className={getStatusColor(context.status)}>
-              {context.status.toUpperCase()}
-            </Badge>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Badge className={getSeverityColor(context.severity)}>
+                {context.severity.toUpperCase()}
+              </Badge>
+              <Badge className={getStatusColor(context.status)}>
+                {context.status.toUpperCase()}
+              </Badge>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleExport}>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              className="hidden sm:flex"
+            >
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
-            <Button variant="outline" size="sm" onClick={handleShare}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShare}
+              className="hidden sm:flex"
+            >
               <Share className="h-4 w-4 mr-2" />
               Share
             </Button>
             <Button variant="outline" size="sm" onClick={onRefresh}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
+              <RefreshCw className="h-4 w-4 lg:mr-2" />
+              <span className="hidden lg:inline">Refresh</span>
             </Button>
           </div>
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-primary">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+          <div className="text-center p-2 lg:p-0">
+            <div className="text-xl lg:text-2xl font-bold text-primary">
               {context.agentTasks.length}
             </div>
-            <div className="text-sm text-muted-foreground">Agents Deployed</div>
+            <div className="text-xs lg:text-sm text-muted-foreground">
+              Agents Deployed
+            </div>
           </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-orange-400">
+          <div className="text-center p-2 lg:p-0">
+            <div className="text-xl lg:text-2xl font-bold text-orange-400">
               {context.correlations.length}
             </div>
-            <div className="text-sm text-muted-foreground">Correlations</div>
+            <div className="text-xs lg:text-sm text-muted-foreground">
+              Correlations
+            </div>
           </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-red-400">
+          <div className="text-center p-2 lg:p-0">
+            <div className="text-xl lg:text-2xl font-bold text-red-400">
               {context.affectedAssets.length}
             </div>
-            <div className="text-sm text-muted-foreground">Affected Assets</div>
+            <div className="text-xs lg:text-sm text-muted-foreground">
+              Affected Assets
+            </div>
           </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-400">
+          <div className="text-center p-2 lg:p-0">
+            <div className="text-xl lg:text-2xl font-bold text-green-400">
               {context.timeline.length}
             </div>
-            <div className="text-sm text-muted-foreground">Timeline Events</div>
+            <div className="text-xs lg:text-sm text-muted-foreground">
+              Timeline Events
+            </div>
           </div>
         </div>
       </Card>
