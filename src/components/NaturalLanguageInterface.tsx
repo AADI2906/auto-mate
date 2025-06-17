@@ -627,23 +627,17 @@ export const NaturalLanguageInterface: React.FC<
                       disabled={isProcessing}
                       className="pr-10"
                     />
-                    {suggestions.slice(0, 3).map((suggestion, index) => (
-                      <Button
-                        key={index}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSuggestionClick(suggestion)}
-                        className="text-xs"
-                      >
-                        {suggestion}
-                      </Button>
-                    ))}
-                    {!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window) && (
-                      <div className="text-xs text-muted-foreground mt-1">
-                        💡 Voice input not supported in this browser. Use Chrome, Edge, or Safari for voice features.
-                      </div>
-                    )}
-                  </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleVoiceInput}
+                      disabled={isProcessing || isListening}
+                      className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 transition-colors ${
+                        isListening
+                          ? "text-red-400 bg-red-400/10 animate-pulse"
+                          : "text-muted-foreground hover:text-primary"
+                      }`}
+                      title={isListening ? "Listening..." : "Click to use voice input"}
                     >
                       {isListening ? (
                         <div className="relative">
@@ -657,6 +651,18 @@ export const NaturalLanguageInterface: React.FC<
                       )}
                     </Button>
                   </div>
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!currentInput.trim() || isProcessing}
+                    size="sm"
+                  >
+                    {isProcessing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
                   <Button
                     onClick={handleSendMessage}
                     disabled={!currentInput.trim() || isProcessing}
