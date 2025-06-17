@@ -193,6 +193,12 @@ const Index = () => {
               variant="ghost"
               size="sm"
               className="relative flex-shrink-0"
+              onClick={() => {
+                // Show notifications panel
+                alert(
+                  "Notifications:\n• 2 Critical alerts require attention\n• 1 System update available\n• New threat intelligence received",
+                );
+              }}
             >
               <Bell className="h-5 w-5" />
               <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
@@ -200,7 +206,17 @@ const Index = () => {
               </Badge>
             </Button>
 
-            <Button variant="ghost" size="sm" className="flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-shrink-0"
+              onClick={() => {
+                // Open settings
+                alert(
+                  "Settings:\n• Dark/Light theme toggle\n• Notification preferences\n• Agent configuration\n• Export/Import settings",
+                );
+              }}
+            >
               <Settings className="h-5 w-5" />
             </Button>
 
