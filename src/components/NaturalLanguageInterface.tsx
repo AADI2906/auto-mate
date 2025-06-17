@@ -655,13 +655,25 @@ export const NaturalLanguageInterface: React.FC<
                       variant="ghost"
                       size="sm"
                       onClick={handleVoiceInput}
-                      disabled={isProcessing}
-                      className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 ${
-                        isListening ? "text-red-400" : ""
+                      disabled={isProcessing || isListening}
+                      className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 transition-colors ${
+                        isListening
+                          ? "text-red-400 bg-red-400/10 animate-pulse"
+                          : "text-muted-foreground hover:text-primary"
                       }`}
+                      title={
+                        isListening
+                          ? "Listening..."
+                          : "Click to use voice input"
+                      }
                     >
                       {isListening ? (
-                        <MicOff className="h-4 w-4" />
+                        <div className="relative">
+                          <Mic className="h-4 w-4" />
+                          <div className="absolute inset-0 animate-ping">
+                            <Mic className="h-4 w-4 opacity-30" />
+                          </div>
+                        </div>
                       ) : (
                         <Mic className="h-4 w-4" />
                       )}
