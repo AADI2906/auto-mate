@@ -152,13 +152,24 @@ export const AIInsights: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedType, setSelectedType] = useState<string>("all");
 
-  const analysis: AIAnalysis = {
+  const [analysis, setAnalysis] = useState<AIAnalysis>({
     overallHealth: 78,
     threatLevel: "medium",
     recommendations: insights.filter((i) => i.type === "recommendation").length,
     automatedActions: insights.filter((i) => i.autoRemediate).length,
     insights,
-  };
+  });
+
+  // Update analysis when insights change
+  useEffect(() => {
+    setAnalysis((prev) => ({
+      ...prev,
+      recommendations: insights.filter((i) => i.type === "recommendation")
+        .length,
+      automatedActions: insights.filter((i) => i.autoRemediate).length,
+      insights,
+    }));
+  }, [insights]);
 
   const filteredInsights =
     selectedType === "all"
