@@ -216,11 +216,56 @@ export const SecurityAlerts: React.FC = () => {
     alertId: string,
     newStatus: SecurityAlert["status"],
   ) => {
+    const alert = alerts.find((a) => a.id === alertId);
+    if (!alert) return;
+
     setAlerts((prev) =>
-      prev.map((alert) =>
-        alert.id === alertId ? { ...alert, status: newStatus } : alert,
+      prev.map((a) =>
+        a.id === alertId
+          ? {
+              ...a,
+              status: newStatus,
+              assignee:
+                newStatus === "investigating" ? "Security Admin" : a.assignee,
+            }
+          : a,
       ),
     );
+
+    // Simulate different actions based on status change
+    setTimeout(() => {
+      let statusMessage = "";
+      switch (newStatus) {
+        case "investigating":
+          statusMessage = `Investigation started for ${alert.title}. Forensic analysis in progress.`;
+          break;
+        case "resolved":
+          statusMessage = `Alert resolved: ${alert.title}. Root cause identified and mitigated.`;
+          break;
+        case "false_positive":
+          statusMessage = `Alert marked as false positive: ${alert.title}. Detection rules updated.`;
+          break;
+      }
+
+      // Add status change log
+      if (statusMessage) {
+        const newAlert: SecurityAlert = {
+          id: `STATUS-${Date.now()}`,
+          title: "Alert Status Update",
+          description: statusMessage,
+          severity: "low",
+          category: "intrusion",
+          source: "Security Operations",
+          target: "Alert Management",
+          timestamp: new Date(),
+          status: "resolved",
+          iocs: [],
+          location: "SOC",
+        };
+
+        setAlerts((prev) => [newAlert, ...prev.slice(0, 19)]);
+      }
+    }, 1000);
   };
 
   const handleAssign = (alertId: string, assignee: string) => {
