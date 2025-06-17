@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { CLICommandBlock } from "@/components/CLICommandBlock";
 import {
   Send,
   Bot,
@@ -15,6 +16,7 @@ import {
   CheckCircle,
   Plus,
   RotateCcw,
+  Terminal,
 } from "lucide-react";
 
 interface Message {
@@ -30,20 +32,21 @@ export const SimpleAIAssistant: React.FC = () => {
     {
       id: "welcome",
       type: "assistant",
-      content: `🤖 **Llama 3.1:8b AI Assistant**
+      content: `🤖 **Llama 3.1:8b AI Assistant with CLI Integration**
 
-I'm your local AI assistant powered by **Llama 3.1:8b** model. I can help you with:
+I'm your local AI assistant powered by **Llama 3.1:8b** model. I specialize in providing executable solutions:
 
-• **Technical Support** - Network issues, system troubleshooting, CLI commands
-• **Code Assistance** - Programming help, debugging, best practices
-• **Security Analysis** - Threat assessment, security recommendations
-• **System Administration** - Server management, configuration, monitoring
-• **General Questions** - Information, explanations, guidance
+• **🛠️ Technical Troubleshooting** - Network, system, and service issues with CLI fixes
+• **⚡ Executable Commands** - Click "Run" buttons to execute commands directly
+• **🔧 System Administration** - Server management, configuration, monitoring
+• **🛡️ Security Analysis** - Threat assessment with remediation commands
+• **💻 Multi-Platform** - Windows (cmd), macOS/Linux (terminal) support
 
 **Model:** llama3.1:8b
 **Environment Status:** Checking connection...
 
-Ask me anything! I'll provide detailed, practical responses.`,
+**Try asking:** "My network is not working" or "How to restart Apache server"
+I'll provide specific CLI commands you can run instantly! 🚀`,
       timestamp: new Date(),
     },
   ]);
@@ -288,21 +291,101 @@ Please try again or rephrase your question.`,
     navigator.clipboard.writeText(text);
   };
 
+  // Extract CLI commands from message content
+  const extractCLICommands = (content: string): string[] => {
+    const commands: string[] = [];
+
+    // Extract from code blocks
+    const codeBlocks = content.match(
+      /```(?:bash|shell|sh|cmd)?\n([\s\S]*?)\n```/g,
+    );
+    if (codeBlocks) {
+      codeBlocks.forEach((block) => {
+        const blockCommands = block
+          .replace(/```(?:bash|shell|sh|cmd)?\n|\n```/g, "")
+          .split("\n")
+          .filter((line) => {
+            const trimmed = line.trim();
+            return (
+              trimmed &&
+              !trimmed.startsWith("#") &&
+              !trimmed.startsWith("//") &&
+              !trimmed.startsWith("echo") &&
+              trimmed.length > 1
+            );
+          })
+          .map((cmd) => cmd.trim());
+        commands.push(...blockCommands);
+      });
+    }
+
+    // Extract inline commands with backticks (that look like CLI commands)
+    const inlineCommands = content.match(/`([^`]+)`/g);
+    if (inlineCommands) {
+      inlineCommands.forEach((cmd) => {
+        const cleanCmd = cmd.replace(/`/g, "").trim();
+        // Only add if it looks like a command (contains common CLI keywords)
+        if (
+          cleanCmd.match(
+            /^(sudo|systemctl|ip|ping|curl|wget|ssh|netstat|ps|top|grep|cat|ls|cd|mkdir|chmod|chown|service|ufw|iptables|nslookup|dig|traceroute|mtr|tcpdump|ss|lsof|dmesg|journalctl|fdisk|mount|umount|apt|yum|npm|yarn|git|docker|kubectl)/,
+          )
+        ) {
+          commands.push(cleanCmd);
+        }
+      });
+    }
+
+    return [...new Set(commands)]; // Remove duplicates
+  };
+
+  // Render message content with CLI command blocks
+  const renderMessageContent = (message: Message) => {
+    const cliCommands = extractCLICommands(message.content);
+
+    if (cliCommands.length === 0) {
+      // No CLI commands, render normally
+      return (
+        <div className="whitespace-pre-wrap text-sm leading-relaxed">
+          {message.content}
+        </div>
+      );
+    }
+
+    // Has CLI commands, render with command blocks
+    const contentWithoutCodeBlocks = message.content
+      .replace(/```(?:bash|shell|sh|cmd)?\n([\s\S]*?)\n```/g, "")
+      .trim();
+
+    return (
+      <div className="space-y-3">
+        <div className="whitespace-pre-wrap text-sm leading-relaxed">
+          {contentWithoutCodeBlocks}
+        </div>
+
+        <CLICommandBlock
+          commands={cliCommands}
+          title="Suggested CLI Commands"
+          description="Click the run button to execute commands in your terminal"
+        />
+      </div>
+    );
+  };
+
   const startNewChat = () => {
     // Reset to just the welcome message
     setMessages([
       {
         id: "welcome",
         type: "assistant",
-        content: `🤖 **Llama 3.1:8b AI Assistant**
+        content: `🤖 **Llama 3.1:8b AI Assistant with CLI Integration**
 
-I'm your local AI assistant powered by **Llama 3.1:8b** model. I can help you with:
+I'm your local AI assistant powered by **Llama 3.1:8b** model. I specialize in providing executable solutions:
 
-• **Technical Support** - Network issues, system troubleshooting, CLI commands
-• **Code Assistance** - Programming help, debugging, best practices
-• **Security Analysis** - Threat assessment, security recommendations
-• **System Administration** - Server management, configuration, monitoring
-• **General Questions** - Information, explanations, guidance
+• **🛠️ Technical Troubleshooting** - Network, system, and service issues with CLI fixes
+• **⚡ Executable Commands** - Click "Run" buttons to execute commands directly
+• **🔧 System Administration** - Server management, configuration, monitoring
+• **🛡️ Security Analysis** - Threat assessment with remediation commands
+• **💻 Multi-Platform** - Windows (cmd), macOS/Linux (terminal) support
 
 **Model:** llama3.1:8b
 **Environment Status:** ${
@@ -313,7 +396,8 @@ I'm your local AI assistant powered by **Llama 3.1:8b** model. I can help you wi
               : "Checking Model..."
         }
 
-Ask me anything! I'll provide detailed, practical responses.`,
+**Try asking:** "My network is not working" or "How to restart Apache server"
+I'll provide specific CLI commands you can run instantly! 🚀`,
         timestamp: new Date(),
       },
     ]);
@@ -425,9 +509,7 @@ Ask me anything! I'll provide detailed, practical responses.`,
                         : "bg-muted"
                   }`}
                 >
-                  <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                    {message.content}
-                  </div>
+                  {renderMessageContent(message)}
 
                   <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/20">
                     <div className="flex items-center gap-2">
