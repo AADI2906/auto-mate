@@ -49,29 +49,45 @@ export class LlamaAPI {
     return !this.isHostedEnvironment();
   }
 
-  // System prompt optimized for IT/security operations
-  private static systemPrompt = `You are an expert IT security and network operations assistant. Your responses should be:
+  // Enhanced system prompt for dynamic CLI-focused responses
+  private static systemPrompt = `You are an expert IT security and network operations assistant specializing in command-line solutions.
 
-1. PRECISE: Give specific, actionable solutions
-2. CLI-FOCUSED: Prefer command-line solutions when applicable
-3. SECURE: Always consider security implications
-4. STRUCTURED: Format responses clearly with diagnosis, commands, and explanations
+RESPONSE FORMAT - Always structure your responses exactly like this:
 
-For any technical issue:
-- Start with a brief diagnosis
-- Provide specific CLI commands or fixes
-- Explain what each command does
-- Indicate the severity level (low/medium/high/critical)
-- Estimate time to resolution
-- Note any risks or precautions
+**DIAGNOSIS:**
+[Brief analysis of the issue]
 
-Common scenarios:
-- VPN issues: Check logs, restart services, verify configs
-- Network problems: Use ping, traceroute, netstat, ss
-- Security incidents: Analyze logs, check processes, review connections
-- Performance issues: Monitor CPU, memory, disk, network
+**CLI COMMANDS:**
+\`\`\`bash
+command1
+command2
+command3
+\`\`\`
 
-Always provide multiple solutions when possible, starting with the safest approach.`;
+**EXPLANATIONS:**
+1. Command1 explanation
+2. Command2 explanation
+3. Command3 explanation
+
+**SEVERITY:** [critical/high/medium/low]
+**CATEGORY:** [network/security/system/application]
+**RISK LEVEL:** [safe/caution/dangerous]
+**ESTIMATED TIME:** [X-Y minutes]
+
+GUIDELINES:
+- Always provide real, working CLI commands
+- Include verification commands to test fixes
+- Start with safest approaches first
+- Provide alternative solutions when possible
+- Include both diagnostic and fix commands
+- Consider different OS variants (Ubuntu, CentOS, etc.)
+- Add troubleshooting steps if initial fix fails
+
+For network issues: Use ip, ping, netstat, ss, systemctl, nslookup, etc.
+For security: Use journalctl, ps, netstat, iptables, ufw, etc.
+For system: Use systemctl, top, htop, df, iostat, etc.
+
+Be specific and practical. Users need actual commands they can run.`;
 
   static async isAvailable(): Promise<{ available: boolean; error?: string }> {
     // Skip fetch entirely in hosted environments to avoid CORS errors
@@ -265,456 +281,516 @@ Always provide multiple solutions when possible, starting with the safest approa
   }
 
   private static generateMockResponse(query: string): string[] {
+    // Generate dynamic response based on the actual query
     const queryLower = query.toLowerCase();
+    const responseChunks: string[] = [];
 
-    // Network Reset Commands
+    // Analyze the query to understand the user's intent and generate appropriate response
+    const intentKeywords = this.analyzeQueryIntent(queryLower);
+
+    // Generate contextual diagnosis
+    responseChunks.push("**DIAGNOSIS:**\n");
+    responseChunks.push(this.generateDiagnosis(query, intentKeywords) + "\n\n");
+
+    // Generate CLI commands section
+    responseChunks.push("**CLI COMMANDS:**\n");
+    responseChunks.push("```bash\n");
+
+    const commands = this.generateRelevantCommands(queryLower, intentKeywords);
+    commands.forEach((cmd) => {
+      responseChunks.push(cmd + "\n");
+    });
+
+    responseChunks.push("```\n\n");
+
+    // Generate explanations
+    responseChunks.push("**EXPLANATIONS:**\n");
+    const explanations = this.generateExplanations(commands, intentKeywords);
+    explanations.forEach((exp, idx) => {
+      responseChunks.push(`${idx + 1}. ${exp}\n`);
+    });
+    responseChunks.push("\n");
+
+    // Add metadata
+    const metadata = this.generateMetadata(intentKeywords, commands.length);
+    responseChunks.push(`**SEVERITY:** ${metadata.severity}\n`);
+    responseChunks.push(`**CATEGORY:** ${metadata.category}\n`);
+    responseChunks.push(`**RISK LEVEL:** ${metadata.riskLevel}\n`);
+    responseChunks.push(`**ESTIMATED TIME:** ${metadata.estimatedTime}\n`);
+
+    return responseChunks;
+  }
+
+  private static analyzeQueryIntent(queryLower: string): string[] {
+    const keywords: string[] = [];
+
+    // Network-related keywords
     if (
-      queryLower.includes("network reset") ||
-      queryLower.includes("reset network") ||
-      queryLower.includes("restart network") ||
-      queryLower.includes("network restart")
+      queryLower.match(
+        /network|internet|connectivity|connection|ping|dns|ip|routing|interface/,
+      )
     ) {
-      return [
-        "**Complete Network Reset Procedure**\n\n",
-        "**Diagnosis:**\n",
-        "Network reset will flush all network configurations, restart services, and re-establish connections.\n\n",
-        "**Network Reset Commands (Step-by-Step):**\n\n",
-        "1. **Flush DNS cache:**\n",
-        "```bash\n",
-        "sudo systemd-resolve --flush-caches\n",
-        "sudo resolvectl flush-caches\n",
-        "```\n\n",
-        "2. **Reset network interface:**\n",
-        "```bash\n",
-        "sudo ip link set eth0 down\n",
-        "sudo ip link set eth0 up\n",
-        "sudo dhclient -r && sudo dhclient\n",
-        "```\n\n",
-        "3. **Restart network services:**\n",
-        "```bash\n",
-        "sudo systemctl restart NetworkManager\n",
-        "sudo systemctl restart networking\n",
-        "sudo systemctl restart systemd-networkd\n",
-        "```\n\n",
-        "4. **Clear ARP table:**\n",
-        "```bash\n",
-        "sudo ip neigh flush all\n",
-        "arp -d -a\n",
-        "```\n\n",
-        "5. **Reset routing table:**\n",
-        "```bash\n",
-        "sudo ip route flush table main\n",
-        "sudo systemctl restart NetworkManager\n",
-        "```\n\n",
-        "6. **Verify reset:**\n",
-        "```bash\n",
-        "ip addr show\n",
-        "ip route show\n",
-        "ping 8.8.8.8\n",
-        "nslookup google.com\n",
-        "```\n\n",
-        "**Severity:** Medium | **Category:** Network | **Risk:** Caution | **ETA:** 3-5 minutes",
-      ];
+      keywords.push("network");
+    }
+    if (queryLower.match(/reset|restart|reload|refresh|renew/)) {
+      keywords.push("reset");
+    }
+    if (queryLower.match(/slow|performance|lag|latency|speed|bandwidth/)) {
+      keywords.push("performance");
+    }
+    if (queryLower.match(/vpn|tunnel|openvpn|wireguard/)) {
+      keywords.push("vpn");
+    }
+    if (queryLower.match(/wifi|wireless|wlan|access.?point/)) {
+      keywords.push("wifi");
+    }
+    if (queryLower.match(/firewall|port|blocked|iptables|ufw/)) {
+      keywords.push("firewall");
+    }
+    if (queryLower.match(/auth|login|password|credential|ssh|certificate/)) {
+      keywords.push("auth");
+    }
+    if (queryLower.match(/dns|domain|resolve|nslookup|dig/)) {
+      keywords.push("dns");
+    }
+    if (queryLower.match(/service|daemon|systemctl|process|running|stopped/)) {
+      keywords.push("service");
+    }
+    if (queryLower.match(/log|debug|troubleshoot|diagnose|check|status/)) {
+      keywords.push("diagnostic");
     }
 
-    // IP Configuration Reset
+    return keywords.length > 0 ? keywords : ["general"];
+  }
+
+  private static generateDiagnosis(query: string, keywords: string[]): string {
+    if (keywords.includes("reset") && keywords.includes("network")) {
+      return "Network connectivity issues requiring a complete reset of network configurations, services, and routing tables to restore normal operation.";
+    }
+    if (keywords.includes("performance")) {
+      return "Performance degradation detected. Analysis requires monitoring network throughput, latency, and system resource utilization to identify bottlenecks.";
+    }
+    if (keywords.includes("vpn")) {
+      return "VPN connectivity problems likely caused by service configuration, authentication failures, or network routing issues.";
+    }
+    if (keywords.includes("dns")) {
+      return "DNS resolution failure preventing domain name lookups. Requires cache clearing and DNS server configuration verification.";
+    }
+    if (keywords.includes("firewall")) {
+      return "Network traffic blocked by firewall rules. Port accessibility and rule configuration need examination.";
+    }
+    if (keywords.includes("wifi")) {
+      return "Wireless connectivity issues requiring driver verification, interface configuration, and signal analysis.";
+    }
+    if (keywords.includes("auth")) {
+      return "Authentication mechanism failure. User credentials, service status, and access policies require investigation.";
+    }
+
+    return `Technical issue analysis for: "${query}". Systematic diagnostic approach needed to identify root cause and implement solution.`;
+  }
+
+  private static generateRelevantCommands(
+    queryLower: string,
+    keywords: string[],
+  ): string[] {
+    const commands: string[] = [];
+
+    // Network reset commands
+    if (keywords.includes("reset") && keywords.includes("network")) {
+      commands.push(
+        "sudo systemd-resolve --flush-caches",
+        "sudo ip link set eth0 down && sudo ip link set eth0 up",
+        "sudo systemctl restart NetworkManager",
+        "sudo dhclient -r && sudo dhclient",
+        "sudo ip neigh flush all",
+        "ip addr show",
+        "ping -c 3 8.8.8.8",
+      );
+    }
+    // Performance analysis
+    else if (keywords.includes("performance")) {
+      commands.push(
+        "ping -c 10 8.8.8.8",
+        "traceroute 8.8.8.8",
+        "iftop -i eth0",
+        "ss -tuln",
+        "htop",
+        "iostat -x 1 5",
+      );
+    }
+    // VPN troubleshooting
+    else if (keywords.includes("vpn")) {
+      commands.push(
+        "sudo systemctl status openvpn",
+        "sudo systemctl restart openvpn",
+        "sudo journalctl -u openvpn -f",
+        "ping 8.8.8.8",
+        "ip route show",
+      );
+    }
+    // DNS issues
+    else if (keywords.includes("dns")) {
+      commands.push(
+        "sudo systemd-resolve --flush-caches",
+        "nslookup google.com 8.8.8.8",
+        "dig @1.1.1.1 google.com",
+        "cat /etc/resolv.conf",
+        "sudo systemctl restart systemd-resolved",
+      );
+    }
+    // Firewall issues
+    else if (keywords.includes("firewall")) {
+      commands.push(
+        "sudo ufw status verbose",
+        "sudo iptables -L -n",
+        "sudo netstat -tulpn",
+        "nc -zv target-server 80",
+        "sudo ufw allow ssh",
+      );
+    }
+    // WiFi issues
+    else if (keywords.includes("wifi")) {
+      commands.push(
+        "iwconfig",
+        "sudo iwlist scan | head -20",
+        "nmcli dev wifi list",
+        "sudo systemctl restart NetworkManager",
+        "ping -c 3 8.8.8.8",
+      );
+    }
+    // Authentication issues
+    else if (keywords.includes("auth")) {
+      commands.push(
+        "sudo tail -f /var/log/auth.log",
+        "sudo journalctl -u ssh -f",
+        "id $USER",
+        "ssh -v username@server",
+        "sudo systemctl restart ssh",
+      );
+    }
+    // Service management
+    else if (keywords.includes("service")) {
+      commands.push(
+        "systemctl --failed",
+        "sudo systemctl status service-name",
+        "sudo systemctl restart service-name",
+        "sudo journalctl -u service-name -f",
+        "ps aux | grep service-name",
+      );
+    }
+    // General diagnostic
+    else {
+      commands.push(
+        "ip addr show",
+        "ip route show",
+        "ping -c 5 8.8.8.8",
+        "nslookup google.com",
+        "sudo systemctl status NetworkManager",
+        "sudo journalctl -xe",
+      );
+    }
+
+    return commands;
+  }
+
+  private static generateExplanations(
+    commands: string[],
+    keywords: string[],
+  ): string[] {
+    const explanations: string[] = [];
+
+    commands.forEach((cmd) => {
+      if (cmd.includes("systemd-resolve --flush-caches")) {
+        explanations.push(
+          "Clears DNS resolver cache to force fresh DNS lookups",
+        );
+      } else if (cmd.includes("ip link set") && cmd.includes("down")) {
+        explanations.push(
+          "Brings network interface down and back up to reset connection",
+        );
+      } else if (cmd.includes("systemctl restart NetworkManager")) {
+        explanations.push(
+          "Restarts network management service to reload configurations",
+        );
+      } else if (cmd.includes("dhclient")) {
+        explanations.push("Releases and renews DHCP IP address lease");
+      } else if (cmd.includes("ping")) {
+        explanations.push(
+          "Tests network connectivity to verify connection is working",
+        );
+      } else if (cmd.includes("traceroute")) {
+        explanations.push("Traces network path to identify routing issues");
+      } else if (cmd.includes("journalctl")) {
+        explanations.push(
+          "Views system logs to identify error messages and issues",
+        );
+      } else if (cmd.includes("systemctl status")) {
+        explanations.push(
+          "Checks service status and displays current operational state",
+        );
+      } else if (cmd.includes("iptables -L")) {
+        explanations.push(
+          "Lists current firewall rules to identify blocking policies",
+        );
+      } else if (cmd.includes("iwconfig")) {
+        explanations.push(
+          "Displays wireless interface configuration and signal information",
+        );
+      } else {
+        explanations.push(
+          `Executes ${cmd.split(" ")[0]} command for system analysis`,
+        );
+      }
+    });
+
+    return explanations.slice(0, 6); // Limit to 6 explanations
+  }
+
+  private static generateMetadata(
+    keywords: string[],
+    commandCount: number,
+  ): {
+    severity: string;
+    category: string;
+    riskLevel: string;
+    estimatedTime: string;
+  } {
+    let severity = "medium";
+    let category = "system";
+    let riskLevel = "safe";
+
+    // Determine category
     if (
-      queryLower.includes("ip reset") ||
-      queryLower.includes("reset ip") ||
-      queryLower.includes("ip config")
+      keywords.includes("network") ||
+      keywords.includes("dns") ||
+      keywords.includes("vpn") ||
+      keywords.includes("wifi")
     ) {
-      return [
-        "**IP Configuration Reset**\n\n",
-        "**Diagnosis:**\n",
-        "Resetting IP configuration to resolve addressing and connectivity issues.\n\n",
-        "**IP Reset Commands:**\n\n",
-        "1. **Release current IP:**\n",
-        "```bash\n",
-        "sudo dhclient -r\n",
-        "sudo ip addr flush dev eth0\n",
-        "```\n\n",
-        "2. **Renew IP address:**\n",
-        "```bash\n",
-        "sudo dhclient eth0\n",
-        "sudo systemctl restart dhcpcd\n",
-        "```\n\n",
-        "3. **Set static IP (if needed):**\n",
-        "```bash\n",
-        "sudo ip addr add 192.168.1.100/24 dev eth0\n",
-        "sudo ip route add default via 192.168.1.1\n",
-        "```\n\n",
-        "4. **Verify IP configuration:**\n",
-        "```bash\n",
-        "ip addr show eth0\n",
-        "ip route show\n",
-        "ping -c 3 8.8.8.8\n",
-        "```\n\n",
-        "**Severity:** Low | **Category:** Network | **Risk:** Safe | **ETA:** 2-3 minutes",
-      ];
+      category = "network";
+    } else if (keywords.includes("auth") || keywords.includes("firewall")) {
+      category = "security";
+      severity = "high";
     }
 
-    // DNS Issues
+    // Determine severity
     if (
-      queryLower.includes("dns") ||
-      queryLower.includes("domain") ||
-      queryLower.includes("resolve")
+      keywords.includes("reset") ||
+      keywords.some((k) => k.includes("critical"))
     ) {
-      return [
-        "**DNS Resolution Issues Fix**\n\n",
-        "**Diagnosis:**\n",
-        "DNS resolution problems prevent domain name lookups and internet connectivity.\n\n",
-        "**DNS Troubleshooting Commands:**\n\n",
-        "1. **Flush DNS cache:**\n",
-        "```bash\n",
-        "sudo systemd-resolve --flush-caches\n",
-        "sudo resolvectl flush-caches\n",
-        "```\n\n",
-        "2. **Test DNS servers:**\n",
-        "```bash\n",
-        "nslookup google.com 8.8.8.8\n",
-        "dig @1.1.1.1 google.com\n",
-        "```\n\n",
-        "3. **Check DNS configuration:**\n",
-        "```bash\n",
-        "cat /etc/resolv.conf\n",
-        "systemd-resolve --status\n",
-        "```\n\n",
-        "4. **Set reliable DNS servers:**\n",
-        "```bash\n",
-        "echo 'nameserver 8.8.8.8' | sudo tee /etc/resolv.conf\n",
-        "echo 'nameserver 1.1.1.1' | sudo tee -a /etc/resolv.conf\n",
-        "```\n\n",
-        "5. **Restart DNS services:**\n",
-        "```bash\n",
-        "sudo systemctl restart systemd-resolved\n",
-        "sudo systemctl restart NetworkManager\n",
-        "```\n\n",
-        "**Severity:** Medium | **Category:** Network | **Risk:** Safe | **ETA:** 3-5 minutes",
-      ];
-    }
-
-    // Firewall Issues
-    if (
-      queryLower.includes("firewall") ||
-      queryLower.includes("blocked") ||
-      queryLower.includes("port")
+      severity = "high";
+    } else if (
+      keywords.includes("performance") ||
+      keywords.includes("diagnostic")
     ) {
-      return [
-        "**Firewall and Port Issues**\n\n",
-        "**Diagnosis:**\n",
-        "Firewall rules may be blocking network traffic or specific ports.\n\n",
-        "**Firewall Troubleshooting:**\n\n",
-        "1. **Check firewall status:**\n",
-        "```bash\n",
-        "sudo ufw status verbose\n",
-        "sudo iptables -L -n\n",
-        "```\n\n",
-        "2. **Test port connectivity:**\n",
-        "```bash\n",
-        "sudo netstat -tulpn | grep :80\n",
-        "sudo ss -tulpn | grep :443\n",
-        "nc -zv target-server 80\n",
-        "```\n\n",
-        "3. **Temporarily disable firewall (testing only):**\n",
-        "```bash\n",
-        "sudo ufw disable\n",
-        "sudo systemctl stop iptables\n",
-        "```\n\n",
-        "4. **Allow specific ports:**\n",
-        "```bash\n",
-        "sudo ufw allow 80/tcp\n",
-        "sudo ufw allow 443/tcp\n",
-        "sudo ufw allow ssh\n",
-        "```\n\n",
-        "5. **Re-enable firewall:**\n",
-        "```bash\n",
-        "sudo ufw enable\n",
-        "sudo systemctl start iptables\n",
-        "```\n\n",
-        "**Severity:** High | **Category:** Security | **Risk:** Caution | **ETA:** 5-10 minutes",
-      ];
+      severity = "medium";
     }
 
-    // VPN Issues
-    if (queryLower.includes("vpn")) {
-      return [
-        "**VPN Connection Issue Diagnosis**\n\n",
-        "**Root Cause Analysis:**\n",
-        "VPN connection failures typically stem from authentication issues, network connectivity problems, or service configuration errors.\n\n",
-        "**Immediate CLI Solutions:**\n\n",
-        "1. **Check VPN service status:**\n",
-        "```bash\n",
-        "sudo systemctl status openvpn\n",
-        "sudo systemctl status strongswan\n",
-        "```\n\n",
-        "2. **Restart VPN services:**\n",
-        "```bash\n",
-        "sudo systemctl restart openvpn\n",
-        "sudo systemctl restart strongswan\n",
-        "```\n\n",
-        "3. **Check network connectivity:**\n",
-        "```bash\n",
-        "ping 8.8.8.8\n",
-        "nslookup your-vpn-server.com\n",
-        "```\n\n",
-        "4. **Verify VPN configuration:**\n",
-        "```bash\n",
-        "sudo cat /etc/openvpn/client.conf\n",
-        "sudo journalctl -u openvpn -f\n",
-        "```\n\n",
-        "5. **Test port connectivity:**\n",
-        "```bash\n",
-        "telnet vpn-server 1194\n",
-        "nc -zv vpn-server 443\n",
-        "```\n\n",
-        "**Severity:** Medium | **Category:** Network | **Risk:** Safe | **ETA:** 5-10 minutes",
-      ];
+    // Determine risk level
+    if (keywords.includes("reset") || commandCount > 6) {
+      riskLevel = "caution";
     }
 
-    // Performance Issues
-    if (
-      queryLower.includes("slow") ||
-      queryLower.includes("performance") ||
-      queryLower.includes("lag")
-    ) {
-      return [
-        "**Network Performance Issue Analysis**\n\n",
-        "**Diagnosis:**\n",
-        "Performance degradation requires systematic analysis of network, CPU, memory, and disk utilization.\n\n",
-        "**Performance Monitoring Commands:**\n\n",
-        "1. **Network throughput analysis:**\n",
-        "```bash\n",
-        "iftop -i eth0\n",
-        "nethogs\n",
-        "ss -tuln\n",
-        "```\n\n",
-        "2. **System resource monitoring:**\n",
-        "```bash\n",
-        "htop\n",
-        "iostat -x 1 5\n",
-        "vmstat 1 5\n",
-        "```\n\n",
-        "3. **Network latency testing:**\n",
-        "```bash\n",
-        "ping -c 10 target-server\n",
-        "traceroute target-server\n",
-        "mtr --report target-server\n",
-        "```\n\n",
-        "4. **Bandwidth testing:**\n",
-        "```bash\n",
-        "iperf3 -c server-ip\n",
-        "speedtest-cli\n",
-        "```\n\n",
-        "**Severity:** Medium | **Category:** System | **Risk:** Safe | **ETA:** 10-15 minutes",
-      ];
+    // Estimate time based on complexity
+    let estimatedTime = "5-10 minutes";
+    if (severity === "high" || commandCount > 8) {
+      estimatedTime = "10-15 minutes";
+    } else if (commandCount <= 3) {
+      estimatedTime = "2-5 minutes";
     }
 
-    // Authentication Issues
-    if (
-      queryLower.includes("auth") ||
-      queryLower.includes("login") ||
-      queryLower.includes("password")
-    ) {
-      return [
-        "**Authentication Issue Resolution**\n\n",
-        "**Diagnosis:**\n",
-        "Authentication failures can be caused by credential issues, service problems, or policy violations.\n\n",
-        "**Authentication Troubleshooting:**\n\n",
-        "1. **Check authentication logs:**\n",
-        "```bash\n",
-        "sudo tail -f /var/log/auth.log\n",
-        "sudo journalctl -u ssh -f\n",
-        "```\n\n",
-        "2. **Verify user account status:**\n",
-        "```bash\n",
-        "sudo passwd -S username\n",
-        "sudo chage -l username\n",
-        "id username\n",
-        "```\n\n",
-        "3. **Test authentication mechanisms:**\n",
-        "```bash\n",
-        "ssh -v username@server\n",
-        "ldapsearch -x -b 'dc=company,dc=com' '(uid=username)'\n",
-        "```\n\n",
-        "4. **Reset authentication if needed:**\n",
-        "```bash\n",
-        "sudo passwd username\n",
-        "sudo systemctl restart ssh\n",
-        "```\n\n",
-        "**Severity:** High | **Category:** Security | **Risk:** Caution | **ETA:** 5-10 minutes",
-      ];
-    }
-
-    // WiFi Issues
-    if (
-      queryLower.includes("wifi") ||
-      queryLower.includes("wireless") ||
-      queryLower.includes("wlan")
-    ) {
-      return [
-        "**WiFi Connection Troubleshooting**\n\n",
-        "**Diagnosis:**\n",
-        "WiFi connectivity issues require checking wireless adapter, drivers, and connection settings.\n\n",
-        "**WiFi Diagnostic Commands:**\n\n",
-        "1. **Check wireless interface:**\n",
-        "```bash\n",
-        "iwconfig\n",
-        "ip link show\n",
-        "lspci | grep -i wireless\n",
-        "```\n\n",
-        "2. **Scan for networks:**\n",
-        "```bash\n",
-        "sudo iwlist scan | grep ESSID\n",
-        "nmcli dev wifi list\n",
-        "```\n\n",
-        "3. **Restart wireless services:**\n",
-        "```bash\n",
-        "sudo systemctl restart NetworkManager\n",
-        "sudo modprobe -r iwlwifi && sudo modprobe iwlwifi\n",
-        "```\n\n",
-        "4. **Connect to WiFi:**\n",
-        "```bash\n",
-        "nmcli dev wifi connect 'SSID' password 'password'\n",
-        "sudo wpa_supplicant -B -i wlan0 -c /etc/wpa_supplicant.conf\n",
-        "```\n\n",
-        "5. **Check connection status:**\n",
-        "```bash\n",
-        "iwconfig wlan0\n",
-        "ping -c 3 8.8.8.8\n",
-        "```\n\n",
-        "**Severity:** Medium | **Category:** Network | **Risk:** Safe | **ETA:** 5-8 minutes",
-      ];
-    }
-
-    // Default response for other queries
-    return [
-      "**General Network Diagnostic Analysis**\n\n",
-      "**Initial Diagnosis:**\n",
-      "I'll provide comprehensive network troubleshooting steps for your query.\n\n",
-      "**Essential Network Commands:**\n\n",
-      "1. **Network interface status:**\n",
-      "```bash\n",
-      "ip addr show\n",
-      "ip link show\n",
-      "ifconfig -a\n",
-      "```\n\n",
-      "2. **Connectivity testing:**\n",
-      "```bash\n",
-      "ping -c 5 8.8.8.8\n",
-      "ping -c 5 google.com\n",
-      "traceroute 8.8.8.8\n",
-      "```\n\n",
-      "3. **DNS and routing:**\n",
-      "```bash\n",
-      "nslookup google.com\n",
-      "ip route show\n",
-      "cat /etc/resolv.conf\n",
-      "```\n\n",
-      "4. **Port and service checking:**\n",
-      "```bash\n",
-      "netstat -tulpn\n",
-      "ss -tulpn\n",
-      "systemctl status NetworkManager\n",
-      "```\n\n",
-      "5. **Network logs:**\n",
-      "```bash\n",
-      "sudo journalctl -u NetworkManager -f\n",
-      "dmesg | grep -i network\n",
-      "```\n\n",
-      "**Severity:** Medium | **Category:** Network | **Risk:** Safe | **ETA:** 5-10 minutes",
-    ];
+    return { severity, category, riskLevel, estimatedTime };
   }
 
   private static parseSolution(
     response: string,
     originalQuery: string,
   ): ParsedSolution {
-    const queryLower = originalQuery.toLowerCase();
-
-    // Extract CLI commands from the response
+    // Extract CLI commands from bash code blocks
     const cliCommands: string[] = [];
-    const codeBlocks = response.match(/```bash\n([\s\S]*?)\n```/g);
+    const codeBlocks = response.match(
+      /```(?:bash|shell|sh)?\n([\s\S]*?)\n```/gi,
+    );
     if (codeBlocks) {
       codeBlocks.forEach((block) => {
         const commands = block
-          .replace(/```bash\n|\n```/g, "")
+          .replace(/```(?:bash|shell|sh)?\n|\n```/gi, "")
           .split("\n")
-          .filter((cmd) => cmd.trim());
+          .filter((cmd) => {
+            const trimmed = cmd.trim();
+            return (
+              trimmed &&
+              !trimmed.startsWith("#") &&
+              !trimmed.startsWith("//") &&
+              trimmed.length > 1
+            );
+          })
+          .map((cmd) => cmd.trim());
         cliCommands.push(...commands);
       });
     }
 
-    // Extract explanations
-    const explanations = response
-      .split("\n")
-      .filter(
-        (line) =>
-          line.trim() && !line.startsWith("```") && !line.startsWith("#"),
-      )
-      .slice(0, 5);
-
-    // Determine category and severity
-    let category: ParsedSolution["category"] = "system";
-    let severity: ParsedSolution["severity"] = "medium";
-
-    if (queryLower.includes("vpn") || queryLower.includes("network")) {
-      category = "network";
-    } else if (
-      queryLower.includes("auth") ||
-      queryLower.includes("security") ||
-      queryLower.includes("hack")
-    ) {
-      category = "security";
-      severity = "high";
-    } else if (
-      queryLower.includes("critical") ||
-      queryLower.includes("down") ||
-      queryLower.includes("fail")
-    ) {
-      severity = "critical";
-    } else if (
-      queryLower.includes("slow") ||
-      queryLower.includes("performance")
-    ) {
-      severity = "medium";
+    // Also extract inline commands with backticks
+    const inlineCommands = response.match(/`([^`]+)`/g);
+    if (inlineCommands) {
+      inlineCommands.forEach((cmd) => {
+        const cleanCmd = cmd.replace(/`/g, "").trim();
+        // Only add if it looks like a command (contains common CLI keywords)
+        if (
+          cleanCmd.match(
+            /^(sudo|systemctl|ip|ping|curl|wget|ssh|netstat|ps|top|grep|cat|echo|ls|cd|mkdir|chmod|chown|service|ufw|iptables|nslookup|dig|traceroute|mtr|tcpdump|ss|lsof|dmesg|journalctl|fdisk|mount|umount|crontab|tar|gzip|docker|kubectl|npm|yarn|git)/,
+          )
+        ) {
+          cliCommands.push(cleanCmd);
+        }
+      });
     }
 
-    // Determine risk level
+    // Extract diagnosis from response
+    let diagnosis = "Technical analysis";
+    const diagnosisMatch = response.match(
+      /\*\*DIAGNOSIS:\*\*\s*\n?(.*?)(?:\n\*\*|$)/is,
+    );
+    if (diagnosisMatch) {
+      diagnosis = diagnosisMatch[1].trim();
+    } else {
+      // Fallback: use first meaningful line
+      const lines = response
+        .split("\n")
+        .filter((line) => line.trim() && !line.startsWith("```"));
+      if (lines.length > 0) {
+        diagnosis = lines[0].replace(/^\*+\s*/, "").trim();
+      }
+    }
+
+    // Extract explanations (numbered or bulleted lists)
+    const explanations: string[] = [];
+    const explanationLines = response.split("\n").filter((line) => {
+      const trimmed = line.trim();
+      return (
+        trimmed.match(/^(\d+\.|[•\-\*]|\*\*\d+\.|\*\*[•\-\*])\s+/) ||
+        (trimmed.startsWith("**EXPLANATIONS:**") === false &&
+          trimmed.length > 10 &&
+          !trimmed.startsWith("```") &&
+          !trimmed.startsWith("#") &&
+          !trimmed.match(/^\*\*[A-Z\s]+:\*\*/))
+      );
+    });
+
+    explanationLines.slice(0, 5).forEach((line) => {
+      const cleaned = line
+        .replace(/^(\d+\.|[•\-\*]|\*\*\d+\.|\*\*[•\-\*])\s*/, "")
+        .trim();
+      if (cleaned) {
+        explanations.push(cleaned);
+      }
+    });
+
+    // Dynamic severity extraction
+    let severity: ParsedSolution["severity"] = "medium";
+    const severityMatch = response.match(
+      /\*\*SEVERITY:\*\*\s*(critical|high|medium|low)/i,
+    );
+    if (severityMatch) {
+      severity = severityMatch[1].toLowerCase() as ParsedSolution["severity"];
+    } else {
+      // Analyze content for severity indicators
+      const lowerResponse = response.toLowerCase();
+      if (
+        lowerResponse.includes("critical") ||
+        lowerResponse.includes("urgent") ||
+        lowerResponse.includes("immediate")
+      ) {
+        severity = "critical";
+      } else if (
+        lowerResponse.includes("high") ||
+        lowerResponse.includes("important") ||
+        lowerResponse.includes("security")
+      ) {
+        severity = "high";
+      } else if (
+        lowerResponse.includes("low") ||
+        lowerResponse.includes("minor")
+      ) {
+        severity = "low";
+      }
+    }
+
+    // Dynamic category extraction
+    let category: ParsedSolution["category"] = "system";
+    const categoryMatch = response.match(
+      /\*\*CATEGORY:\*\*\s*(network|security|system|application)/i,
+    );
+    if (categoryMatch) {
+      category = categoryMatch[1].toLowerCase() as ParsedSolution["category"];
+    } else {
+      // Analyze query and response for category
+      const combined = (originalQuery + " " + response).toLowerCase();
+      if (
+        combined.match(
+          /network|vpn|dns|ip|routing|ethernet|wifi|internet|connectivity/,
+        )
+      ) {
+        category = "network";
+      } else if (
+        combined.match(
+          /security|auth|login|firewall|vulnerability|hack|breach|malware/,
+        )
+      ) {
+        category = "security";
+      } else if (
+        combined.match(/app|application|software|service|web|api|database/)
+      ) {
+        category = "application";
+      }
+    }
+
+    // Dynamic risk level extraction
     let riskLevel: ParsedSolution["riskLevel"] = "safe";
-    if (
-      cliCommands.some(
-        (cmd) =>
-          cmd.includes("rm ") ||
-          cmd.includes("delete") ||
-          cmd.includes("format"),
-      )
-    ) {
-      riskLevel = "dangerous";
-    } else if (
-      cliCommands.some(
-        (cmd) =>
-          cmd.includes("restart") ||
-          cmd.includes("stop") ||
-          cmd.includes("kill"),
-      )
-    ) {
-      riskLevel = "caution";
+    const riskMatch = response.match(
+      /\*\*RISK LEVEL:\*\*\s*(safe|caution|dangerous)/i,
+    );
+    if (riskMatch) {
+      riskLevel = riskMatch[1].toLowerCase() as ParsedSolution["riskLevel"];
+    } else {
+      // Analyze commands for risk
+      const dangerousCommands =
+        /rm\s+-.*[rf]|format|fdisk|mkfs|dd\s+if=.*of=|shred|wipefs/i;
+      const cautionCommands =
+        /restart|reboot|stop|kill|systemctl.*stop|service.*stop|iptables.*DROP|ufw.*deny/i;
+
+      if (cliCommands.some((cmd) => dangerousCommands.test(cmd))) {
+        riskLevel = "dangerous";
+      } else if (cliCommands.some((cmd) => cautionCommands.test(cmd))) {
+        riskLevel = "caution";
+      }
+    }
+
+    // Dynamic time estimation
+    let estimatedTime = "5-15 minutes";
+    const timeMatch = response.match(/\*\*ESTIMATED TIME:\*\*\s*([^*\n]+)/i);
+    if (timeMatch) {
+      estimatedTime = timeMatch[1].trim();
+    } else {
+      // Estimate based on severity and command count
+      const commandCount = cliCommands.length;
+      if (severity === "critical") {
+        estimatedTime = "2-5 minutes";
+      } else if (severity === "high" || commandCount > 8) {
+        estimatedTime = "5-10 minutes";
+      } else if (severity === "medium" || commandCount > 4) {
+        estimatedTime = "10-15 minutes";
+      } else {
+        estimatedTime = "15-30 minutes";
+      }
     }
 
     return {
-      diagnosis: response.split("\n")[0] || "Technical issue analysis",
+      diagnosis,
       cliCommands,
       explanations,
       severity,
       category,
-      estimatedTime:
-        severity === "critical"
-          ? "2-5 minutes"
-          : severity === "high"
-            ? "5-10 minutes"
-            : severity === "medium"
-              ? "10-15 minutes"
-              : "15-30 minutes",
+      estimatedTime,
       riskLevel,
     };
   }
