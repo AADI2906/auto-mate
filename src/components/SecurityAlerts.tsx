@@ -271,9 +271,30 @@ export const SecurityAlerts: React.FC = () => {
   const handleAssign = (alertId: string, assignee: string) => {
     setAlerts((prev) =>
       prev.map((alert) =>
-        alert.id === alertId ? { ...alert, assignee } : alert,
+        alert.id === alertId
+          ? { ...alert, assignee, status: "investigating" }
+          : alert,
       ),
     );
+
+    // Log assignment
+    setTimeout(() => {
+      const assignmentAlert: SecurityAlert = {
+        id: `ASSIGN-${Date.now()}`,
+        title: "Alert Assignment",
+        description: `Alert assigned to ${assignee} for investigation and resolution.`,
+        severity: "low",
+        category: "intrusion",
+        source: "Alert Management",
+        target: assignee,
+        timestamp: new Date(),
+        status: "resolved",
+        iocs: [],
+        location: "SOC",
+      };
+
+      setAlerts((prev) => [assignmentAlert, ...prev.slice(0, 19)]);
+    }, 500);
   };
 
   // Simulate real-time alerts
