@@ -187,22 +187,74 @@ export const AIInsights: React.FC = () => {
 
   const runFullAnalysis = () => {
     setIsAnalyzing(true);
+
+    // Generate multiple new insights
     setTimeout(() => {
+      const newInsights: AIInsight[] = [
+        {
+          id: Date.now().toString(),
+          type: "threat",
+          severity: "high",
+          title: "Advanced Persistent Threat Detected",
+          description:
+            "ML models detected sophisticated attack patterns indicating APT group activity. Multiple compromised endpoints identified with lateral movement attempts.",
+          confidence: 92,
+          timestamp: new Date(),
+          status: "new",
+          actionable: true,
+          autoRemediate: false,
+        },
+        {
+          id: (Date.now() + 1).toString(),
+          type: "performance",
+          severity: "medium",
+          title: "Network Congestion Anomaly",
+          description:
+            "Unusual traffic patterns detected on core switches. Bandwidth utilization 340% above normal baseline during off-peak hours.",
+          confidence: 88,
+          timestamp: new Date(),
+          status: "new",
+          actionable: true,
+          autoRemediate: true,
+        },
+        {
+          id: (Date.now() + 2).toString(),
+          type: "recommendation",
+          severity: "low",
+          title: "Zero Trust Architecture Enhancement",
+          description:
+            "Analysis suggests implementing additional zero trust controls could reduce attack surface by 67% and improve compliance posture.",
+          confidence: 79,
+          timestamp: new Date(),
+          status: "new",
+          actionable: true,
+        },
+        {
+          id: (Date.now() + 3).toString(),
+          type: "prediction",
+          severity: "critical",
+          title: "Imminent System Failure Predicted",
+          description:
+            "Predictive models indicate 89% probability of critical infrastructure failure within next 4 hours based on current degradation patterns.",
+          confidence: 89,
+          timestamp: new Date(),
+          status: "new",
+          actionable: true,
+          autoRemediate: true,
+        },
+      ];
+
+      setInsights((prev) => [...newInsights, ...prev]);
       setIsAnalyzing(false);
-      // Simulate new insights
-      const newInsight: AIInsight = {
-        id: Date.now().toString(),
-        type: "recommendation",
-        severity: "low",
-        title: "Network Segmentation Improvement",
-        description:
-          "AI suggests implementing micro-segmentation on VLAN 10 to reduce lateral movement risk by 34%.",
-        confidence: 85,
-        timestamp: new Date(),
-        status: "new",
-        actionable: true,
-      };
-      setInsights((prev) => [newInsight, ...prev]);
+
+      // Update analysis metrics
+      setAnalysis((prev) => ({
+        ...prev,
+        overallHealth: Math.max(45, prev.overallHealth - 15),
+        threatLevel: "high" as const,
+        recommendations: prev.recommendations + 2,
+        automatedActions: prev.automatedActions + 2,
+      }));
     }, 3000);
   };
 
