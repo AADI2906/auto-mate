@@ -176,14 +176,67 @@ export const AIInsights: React.FC = () => {
       ? insights
       : insights.filter((insight) => insight.type === selectedType);
 
-  const handleAutoRemediate = (insightId: string) => {
+  const handleAutoRemediate = async (insightId: string) => {
+    const insight = insights.find((i) => i.id === insightId);
+    if (!insight) return;
+
+    // Update insight status to show it's being processed
     setInsights((prev) =>
-      prev.map((insight) =>
-        insight.id === insightId
-          ? { ...insight, status: "resolved" as const }
-          : insight,
+      prev.map((i) =>
+        i.id === insightId ? { ...i, status: "acknowledged" as const } : i,
       ),
     );
+
+    // Simulate auto-remediation process
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // Simulate different outcomes based on insight type
+    const success = Math.random() > 0.2; // 80% success rate
+
+    setInsights((prev) =>
+      prev.map((i) =>
+        i.id === insightId
+          ? {
+              ...i,
+              status: success
+                ? ("resolved" as const)
+                : ("acknowledged" as const),
+              description: success
+                ? i.description +
+                  " [AUTO-RESOLVED: Remediation completed successfully]"
+                : i.description +
+                  " [AUTO-REMEDIATION FAILED: Manual intervention required]",
+            }
+          : i,
+      ),
+    );
+
+    // Add a new insight about the remediation action
+    const remediationInsight: AIInsight = {
+      id: Date.now().toString(),
+      type: "recommendation",
+      severity: success ? "low" : "medium",
+      title: success
+        ? "Auto-Remediation Successful"
+        : "Auto-Remediation Failed",
+      description: success
+        ? `Successfully auto-remediated: ${insight.title}. System health improved.`
+        : `Auto-remediation failed for: ${insight.title}. Security team notification sent.`,
+      confidence: 95,
+      timestamp: new Date(),
+      status: "new",
+      actionable: false,
+    };
+
+    setInsights((prev) => [remediationInsight, ...prev]);
+
+    // Update overall health based on success
+    if (success) {
+      setAnalysis((prev) => ({
+        ...prev,
+        overallHealth: Math.min(100, prev.overallHealth + 5),
+      }));
+    }
   };
 
   const handleAcknowledge = (insightId: string) => {
