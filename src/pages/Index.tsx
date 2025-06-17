@@ -155,6 +155,26 @@ const Index = () => {
                 <p className="text-xs text-muted-foreground">
                   AI-Powered Security Operations Platform
                 </p>
+                {activeIncident && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className="text-xs">
+                      Active: {activeIncident.id}
+                    </Badge>
+                    <Badge
+                      className={`text-xs ${
+                        activeIncident.severity === "critical"
+                          ? "bg-red-500/10 text-red-400"
+                          : activeIncident.severity === "high"
+                            ? "bg-orange-500/10 text-orange-400"
+                            : activeIncident.severity === "medium"
+                              ? "bg-yellow-500/10 text-yellow-400"
+                              : "bg-green-500/10 text-green-400"
+                      }`}
+                    >
+                      {activeIncident.severity}
+                    </Badge>
+                  </div>
+                )}
               </div>
             </div>
           </div>
