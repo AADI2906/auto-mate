@@ -250,19 +250,19 @@ export const NaturalLanguageInterface: React.FC<
 
   const checkNetworkConnectivity = async (): Promise<boolean> => {
     try {
-      const response = await fetch("/ping", {
-        method: "HEAD",
-        cache: "no-cache",
-        signal: AbortSignal.timeout(3000),
+      const response = await fetch('/ping', {
+        method: 'HEAD',
+        cache: 'no-cache',
+        signal: AbortSignal.timeout(3000)
       });
       return response.ok;
     } catch {
       // Fallback check using a reliable external service
       try {
-        await fetch("https://www.google.com/favicon.ico", {
-          mode: "no-cors",
-          cache: "no-cache",
-          signal: AbortSignal.timeout(3000),
+        await fetch('https://www.google.com/favicon.ico', {
+          mode: 'no-cors',
+          cache: 'no-cache',
+          signal: AbortSignal.timeout(3000)
         });
         return true;
       } catch {
@@ -276,28 +276,19 @@ export const NaturalLanguageInterface: React.FC<
     setShowVoiceError(false);
 
     // Check if speech recognition is supported
-    if (
-      !("webkitSpeechRecognition" in window) &&
-      !("SpeechRecognition" in window)
-    ) {
-      alert(
-        "Speech recognition not supported in this browser. Please use Chrome, Edge, or Safari for voice input, or type your query manually.",
-      );
+    if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
+      alert("Speech recognition not supported in this browser. Please use Chrome, Edge, or Safari for voice input, or type your query manually.");
       return;
     }
 
     // Check network connectivity
     const isOnline = await checkNetworkConnectivity();
     if (!isOnline) {
-      alert(
-        "Voice input requires an internet connection. Please check your network and try again, or type your query manually.",
-      );
+      alert("Voice input requires an internet connection. Please check your network and try again, or type your query manually.");
       return;
     }
 
-    const SpeechRecognition =
-      (window as any).webkitSpeechRecognition ||
-      (window as any).SpeechRecognition;
+    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
     const recognition = new SpeechRecognition();
 
     // Configure recognition with better settings
@@ -335,30 +326,24 @@ export const NaturalLanguageInterface: React.FC<
 
       switch (event.error) {
         case "no-speech":
-          errorMessage =
-            "No speech detected. Please try speaking again or type your query.";
+          errorMessage = "No speech detected. Please try speaking again or type your query.";
           shouldRetry = voiceRetryCount < 2;
           break;
         case "network":
-          errorMessage =
-            "Network connection issue detected. Voice recognition requires internet access. Please check your connection or type your query manually.";
+          errorMessage = "Network connection issue detected. Voice recognition requires internet access. Please check your connection or type your query manually.";
           shouldRetry = voiceRetryCount < 1;
           break;
         case "not-allowed":
-          errorMessage =
-            "Microphone access denied. Please allow microphone access in your browser settings, or type your query manually.";
+          errorMessage = "Microphone access denied. Please allow microphone access in your browser settings, or type your query manually.";
           break;
         case "service-not-allowed":
-          errorMessage =
-            "Speech recognition service not available. Please type your query manually.";
+          errorMessage = "Speech recognition service not available. Please type your query manually.";
           break;
         case "bad-grammar":
-          errorMessage =
-            "Speech recognition grammar error. Please try speaking more clearly or type your query.";
+          errorMessage = "Speech recognition grammar error. Please try speaking more clearly or type your query.";
           break;
         case "language-not-supported":
-          errorMessage =
-            "Language not supported. Please type your query manually.";
+          errorMessage = "Language not supported. Please type your query manually.";
           break;
         default:
           errorMessage = `Voice input temporarily unavailable (${event.error}). Please type your query manually.`;
@@ -375,12 +360,9 @@ export const NaturalLanguageInterface: React.FC<
       setMessages((prev) => [...prev, errorChatMessage]);
 
       // Auto-retry for certain errors
-      if (
-        shouldRetry &&
-        (event.error === "no-speech" || event.error === "network")
-      ) {
+      if (shouldRetry && (event.error === "no-speech" || event.error === "network")) {
         setTimeout(() => {
-          setVoiceRetryCount((prev) => prev + 1);
+          setVoiceRetryCount(prev => prev + 1);
           console.log(`Retrying voice input (attempt ${voiceRetryCount + 2})`);
           handleVoiceInput();
         }, 1500);
@@ -396,12 +378,7 @@ export const NaturalLanguageInterface: React.FC<
       const confidence = event.results[0][0].confidence;
 
       setCurrentInput(transcript);
-      console.log(
-        "🎤 Voice input result:",
-        transcript,
-        "Confidence:",
-        confidence,
-      );
+      console.log("🎤 Voice input result:", transcript, "Confidence:", confidence);
 
       // Add success message to chat
       const successMessage: ConversationMessage = {
@@ -432,8 +409,7 @@ export const NaturalLanguageInterface: React.FC<
       const fallbackMessage: ConversationMessage = {
         id: `voice-fallback-${Date.now()}`,
         type: "system",
-        content:
-          "❌ Voice input failed to start. Please type your query manually.",
+        content: "❌ Voice input failed to start. Please type your query manually.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, fallbackMessage]);
@@ -649,23 +625,24 @@ export const NaturalLanguageInterface: React.FC<
                       onKeyPress={handleKeyPress}
                       placeholder="Ask me about network issues, security incidents, or system performance..."
                       disabled={isProcessing}
-                      className="pr-10"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleVoiceInput}
-                      disabled={isProcessing || isListening}
-                      className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 transition-colors ${
-                        isListening
-                          ? "text-red-400 bg-red-400/10 animate-pulse"
-                          : "text-muted-foreground hover:text-primary"
-                      }`}
-                      title={
-                        isListening
-                          ? "Listening..."
-                          : "Click to use voice input"
-                      }
+                  <div className="flex flex-wrap gap-2">
+                    {suggestions.slice(0, 3).map((suggestion, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className="text-xs"
+                      >
+                        {suggestion}
+                      </Button>
+                    ))}
+                    {!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window) && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        💡 Voice input not supported in this browser. Use Chrome, Edge, or Safari for voice features.
+                      </div>
+                    )}
+                  </div>
                     >
                       {isListening ? (
                         <div className="relative">
@@ -720,10 +697,7 @@ export const NaturalLanguageInterface: React.FC<
                         // Re-run investigation with fresh data
                         setIsProcessing(true);
                         try {
-                          const refreshedContext =
-                            await AgentOrchestrator.orchestrateInvestigation(
-                              activeContext.query,
-                            );
+                          const refreshedContext = await AgentOrchestrator.orchestrateInvestigation(activeContext.query);
                           setActiveContext(refreshedContext);
                           onContextChange?.(refreshedContext);
 
@@ -731,8 +705,7 @@ export const NaturalLanguageInterface: React.FC<
                           const refreshMessage: ConversationMessage = {
                             id: `refresh-${Date.now()}`,
                             type: "system",
-                            content:
-                              "🔄 Context refreshed with latest telemetry data. Updated analysis available.",
+                            content: "🔄 Context refreshed with latest telemetry data. Updated analysis available.",
                             timestamp: new Date(),
                           };
                           setMessages((prev) => [...prev, refreshMessage]);
