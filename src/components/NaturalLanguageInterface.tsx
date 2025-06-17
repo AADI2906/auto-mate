@@ -502,20 +502,21 @@ export const NaturalLanguageInterface: React.FC<
 
         {/* Dynamic Panels */}
         {showDashboard && activeContext && (
-          <div className="w-1/2 flex flex-col min-w-0">
+          <div className="w-full lg:w-1/2 flex flex-col min-w-0">
             <Card className="flex-1 overflow-hidden bg-background/50 backdrop-blur border-border/50">
-              <div className="p-4 border-b border-border/50 flex items-center justify-between">
-                <h3 className="font-semibold">Incident Dashboard</h3>
+              <div className="p-3 lg:p-4 border-b border-border/50 flex items-center justify-between">
+                <h3 className="font-semibold text-sm lg:text-base">Incident Dashboard</h3>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowDashboard(false)}
+                  className="h-8 w-8 p-0"
                 >
                   ×
                 </Button>
               </div>
               <ScrollArea className="flex-1">
-                <div className="p-4">
+                <div className="p-3 lg:p-4">
                   <DynamicIncidentDashboard
                     context={activeContext}
                     onRefresh={() => {
@@ -532,20 +533,21 @@ export const NaturalLanguageInterface: React.FC<
         {showRemediation &&
           activeContext &&
           shouldShowRemediation(activeContext) && (
-            <div className="w-1/2 flex flex-col min-w-0">
+            <div className="w-full lg:w-1/2 flex flex-col min-w-0">
               <Card className="flex-1 overflow-hidden bg-background/50 backdrop-blur border-border/50">
-                <div className="p-4 border-b border-border/50 flex items-center justify-between">
-                  <h3 className="font-semibold">Automated Remediation</h3>
+                <div className="p-3 lg:p-4 border-b border-border/50 flex items-center justify-between">
+                  <h3 className="font-semibold text-sm lg:text-base">Automated Remediation</h3>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowRemediation(false)}
+                    className="h-8 w-8 p-0"
                   >
                     ×
                   </Button>
                 </div>
                 <ScrollArea className="flex-1">
-                  <div className="p-4">
+                  <div className="p-3 lg:p-4">
                     <RemediationWorkflow
                       context={activeContext}
                       onActionExecuted={handleRemediationExecuted}
