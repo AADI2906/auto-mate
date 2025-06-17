@@ -60,6 +60,60 @@ export const DynamicIncidentDashboard: React.FC<
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
 
+  const handleExport = () => {
+    const reportData = {
+      incidentId: context.id,
+      query: context.query.originalQuery,
+      severity: context.severity,
+      status: context.status,
+      agentTasks: context.agentTasks.length,
+      correlations: context.correlations.length,
+      affectedAssets: context.affectedAssets.length,
+      timeline: context.timeline.length,
+      exportTime: new Date().toISOString(),
+    };
+
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `incident-report-${context.id}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: `Security Incident: ${context.id}`,
+      text: `Incident analysis for: ${context.query.originalQuery}`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback to copying URL to clipboard
+        await navigator.clipboard.writeText(window.location.href);
+        alert("Incident URL copied to clipboard!");
+      }
+    } catch (error) {
+      console.error("Error sharing:", error);
+      // Fallback to copying URL
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        alert("Incident URL copied to clipboard!");
+      } catch (clipboardError) {
+        console.error("Clipboard error:", clipboardError);
+        alert("Unable to share or copy URL");
+      }
+    }
+  };
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case "critical":
