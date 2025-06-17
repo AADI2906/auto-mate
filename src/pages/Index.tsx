@@ -274,12 +274,12 @@ const Index = () => {
                       : "hover:bg-muted text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-5 w-5 flex-shrink-0" />
                   {!sidebarCollapsed && (
                     <>
-                      <span className="font-medium">{item.label}</span>
+                      <span className="font-medium truncate">{item.label}</span>
                       {item.badge && (
-                        <Badge className="ml-auto bg-red-500 text-white">
+                        <Badge className="ml-auto bg-red-500 text-white text-xs flex-shrink-0">
                           {item.badge}
                         </Badge>
                       )}
