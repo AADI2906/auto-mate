@@ -9,6 +9,7 @@ import { AIInsights } from "@/components/AIInsights";
 import { SecurityAlerts } from "@/components/SecurityAlerts";
 import { MetricsDashboard } from "@/components/MetricsDashboard";
 import { NaturalLanguageInterface } from "@/components/NaturalLanguageInterface";
+import { RealTimeSystemDashboard } from "@/components/RealTimeSystemDashboard";
 import { IncidentContext } from "@/types/nlp";
 import {
   Shield,
