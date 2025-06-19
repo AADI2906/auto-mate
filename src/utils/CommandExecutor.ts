@@ -132,13 +132,17 @@ export class CommandExecutor {
     }
   }
 
-  // Execute command via Python backend
-  private static async executeViaBackend(command: string): Promise<{
+  // Execute command via Python backend (with terminal mode)
+  private static async executeViaBackend(
+    command: string,
+    mode: "terminal" | "background" = "terminal",
+  ): Promise<{
     success: boolean;
     output?: string;
     stderr?: string;
     returncode?: number;
     error?: string;
+    method?: string;
   }> {
     try {
       const response = await fetch("http://localhost:5000/api/execute", {
@@ -149,6 +153,7 @@ export class CommandExecutor {
         body: JSON.stringify({
           command: command,
           timeout: 30,
+          mode: mode,
         }),
       });
 
@@ -164,6 +169,7 @@ export class CommandExecutor {
           output: result.stdout,
           stderr: result.stderr,
           returncode: result.returncode,
+          method: result.method,
         };
       } else {
         return {
@@ -173,6 +179,41 @@ export class CommandExecutor {
       }
     } catch (error) {
       console.warn("Backend execution failed:", error);
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Backend connection failed",
+      };
+    }
+  }
+
+  // Execute multiple commands in a single terminal window
+  static async executeBatchInTerminal(commands: string[]): Promise<{
+    success: boolean;
+    error?: string;
+    method?: string;
+  }> {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/execute-terminal-batch",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            commands: commands,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Backend error: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
       return {
         success: false,
         error:

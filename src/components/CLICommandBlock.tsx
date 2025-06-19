@@ -174,6 +174,68 @@ export const CLICommandBlock: React.FC<CLICommandBlockProps> = ({
     URL.revokeObjectURL(url);
   };
 
+  const executeAllInTerminal = async () => {
+    try {
+      setExecutionStatus((prev) => {
+        const newStatus = { ...prev };
+        commands.forEach((_, index) => {
+          newStatus[index] = "executing";
+        });
+        return newStatus;
+      });
+
+      const result = await CommandExecutor.executeBatchInTerminal(commands);
+
+      if (result.success) {
+        setLastExecutionMethod("terminal_batch");
+
+        // Mark all commands as success
+        setExecutionStatus((prev) => {
+          const newStatus = { ...prev };
+          commands.forEach((_, index) => {
+            newStatus[index] = "success";
+          });
+          return newStatus;
+        });
+
+        // Show success message
+        setShowInstructions(true);
+
+        setTimeout(() => {
+          setExecutionStatus((prev) => {
+            const newStatus = { ...prev };
+            commands.forEach((_, index) => {
+              newStatus[index] = "idle";
+            });
+            return newStatus;
+          });
+        }, 3000);
+      } else {
+        // Mark all as error
+        setExecutionStatus((prev) => {
+          const newStatus = { ...prev };
+          commands.forEach((_, index) => {
+            newStatus[index] = "error";
+          });
+          return newStatus;
+        });
+
+        console.error("Terminal batch execution failed:", result.error);
+      }
+    } catch (error) {
+      console.error("Terminal execution error:", error);
+
+      // Mark all as error
+      setExecutionStatus((prev) => {
+        const newStatus = { ...prev };
+        commands.forEach((_, index) => {
+          newStatus[index] = "error";
+        });
+        return newStatus;
+      });
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "executing":
@@ -245,6 +307,15 @@ export const CLICommandBlock: React.FC<CLICommandBlockProps> = ({
           <Button
             variant="ghost"
             size="sm"
+            onClick={executeAllInTerminal}
+            className="h-7 px-2 text-xs"
+            title="Run all commands in terminal"
+          >
+            <Terminal className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={copyAllCommands}
             className="h-7 px-2 text-xs"
             title="Copy all commands"
@@ -279,6 +350,20 @@ export const CLICommandBlock: React.FC<CLICommandBlockProps> = ({
           </AlertDescription>
         </Alert>
       )}
+
+      {showInstructions &&
+        (lastExecutionMethod === "terminal_batch" ||
+          lastExecutionMethod === "visible_terminal") && (
+          <Alert className="border-green-400/20 bg-green-400/5">
+            <Terminal className="h-4 w-4 text-green-400" />
+            <AlertDescription className="text-green-400">
+              <strong>Terminal window opened!</strong>
+              <br />
+              Commands are running in a visible terminal window on your screen.
+              You can see the real-time execution and output.
+            </AlertDescription>
+          </Alert>
+        )}
 
       {/* Commands */}
       <div className="space-y-2">
@@ -344,6 +429,18 @@ export const CLICommandBlock: React.FC<CLICommandBlockProps> = ({
                   ✓ Executed on your system via Python backend
                 </div>
               )}
+              {status === "success" &&
+                lastExecutionMethod === "terminal_batch" && (
+                  <div className="mt-2 text-xs text-green-400">
+                    ✓ Opened in terminal window - commands are running visibly
+                  </div>
+                )}
+              {status === "success" &&
+                lastExecutionMethod === "visible_terminal" && (
+                  <div className="mt-2 text-xs text-green-400">
+                    ✓ Opened in terminal window - command is running visibly
+                  </div>
+                )}
               {status === "error" && (
                 <div className="mt-2 text-xs text-red-400">
                   ✗ Failed to execute - try copying manually
