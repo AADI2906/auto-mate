@@ -49,7 +49,9 @@ export class LlamaAPI {
     return !this.isHostedEnvironment();
   }
 
-  // STRICT CLI-only system prompt - NO generic suggestions allowed
+
+  // Ultra-precise CLI command generator system prompt
+
   private static systemPrompt = `You are a CLI command generator. Your ONLY job is to provide executable CLI commands in EXACT ORDER for any technical issue.
 
 STRICT RULES:
@@ -67,6 +69,8 @@ MANDATORY FORMAT:
 command1
 command2
 # Fix/action commands second (in order)  
+
+
 command3
 command4
 \`\`\`
@@ -82,7 +86,7 @@ FOR REAL-TIME DATA QUERIES, ADD JSON:
 
 COMMAND CATEGORIES (in execution order):
 - Network: ping → ip addr → systemctl status → netstat → traceroute
-- System: ps aux → top → systemctl status → journalctl → dmesg  
+- System: ps aux → top → systemctl status → journalctl → dmesg
 - Services: systemctl status → systemctl restart → systemctl enable
 - Files: ls -la → find → chmod → chown → df -h
 - Performance: free -h → htop → iostat → vmstat → sar
@@ -107,6 +111,7 @@ sudo dhclient -r && sudo dhclient
 \`\`\`
 
 ZERO TOLERANCE for generic text. COMMANDS ONLY.`;
+
 
   static async isAvailable(): Promise<{ available: boolean; error?: string }> {
     // Skip fetch entirely in hosted environments to avoid CORS errors
@@ -798,7 +803,7 @@ ping 8.8.8.8
     }
 
     // Estimate time based on complexity
-    let estimatedTime = "5-10 minutes";
+    let estimatedTime = "5-15 minutes";
     if (severity === "high" || commandCount > 8) {
       estimatedTime = "10-15 minutes";
     } else if (commandCount <= 3) {
@@ -874,7 +879,7 @@ ping 8.8.8.8
     const explanationLines = response.split("\n").filter((line) => {
       const trimmed = line.trim();
       return (
-        trimmed.match(/^(\d+\.|[��\-\*]|\*\*\d+\.|\*\*[•\-\*])\s+/) ||
+        trimmed.match(/^(\d+\.|[•\-\*]|\*\*\d+\.|\*\*[•\-\*])\s+/) ||
         (trimmed.startsWith("**EXPLANATIONS:**") === false &&
           trimmed.length > 10 &&
           !trimmed.startsWith("```") &&
