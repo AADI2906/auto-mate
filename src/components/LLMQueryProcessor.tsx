@@ -51,6 +51,7 @@ export class LLMQueryProcessor {
       confidence,
       originalQuery: query,
       timestamp: new Date(),
+      timeRange: { start: new Date(), end: new Date() },
     };
   }
 
@@ -244,6 +245,159 @@ export class LLMQueryProcessor {
     });
   }
 
+  static async simulateLLMProcessing(query: string): Promise<ParsedQuery> {
+    try {
+      // Try to call local Llama 3.1 first
+      const llamaResponse = await this.callLocalLlama(query);
+      return this.parseLlamaResponse(llamaResponse, query);
+    } catch (error) {
+      console.warn('Local Llama API failed, falling back to local processing:', error);
+      return this.parseQueryLocally(query);
+    }
+  }
+
+  private static async callLocalLlama(query: string): Promise<any> {
+    // Default Ollama/Llama endpoints - adjust port if needed
+    const llamaEndpoints = [
+      'http://localhost:11434/api/generate',  // Ollama default
+      'http://localhost:8080/v1/chat/completions',  // llama.cpp server
+      'http://localhost:5000/api/generate',  // Custom endpoint
+    ];
+
+    const systemPrompt = `You are a security operations AI assistant. Analyze the user query and extract information in JSON format.
+
+Extract:
+1. intent: (investigation, remediation, monitoring, analysis, etc.)
+2. entities: array of IPs, usernames, devices, ports, etc. mentioned
+3. timeRange: if mentioned, otherwise null
+4. confidence: your confidence level (0.0-1.0)
+
+Example response:
+{
+  "intent": "investigation",
+  "entities": ["10.1.1.10", "VPN"],
+  "timeRange": null,
+  "confidence": 0.9
+}
+
+User query: ${query}
+
+Respond only with valid JSON:`;
+
+    for (const endpoint of llamaEndpoints) {
+      try {
+        let requestBody;
+        let headers = { 'Content-Type': 'application/json' };
+
+        if (endpoint.includes('ollama') || endpoint.includes('11434')) {
+          // Ollama format
+          requestBody = {
+            model: 'llama3.1',
+            prompt: systemPrompt,
+            stream: false,
+            options: {
+              temperature: 0.3,
+              top_p: 0.9,
+            }
+          };
+        } else if (endpoint.includes('chat/completions')) {
+          // OpenAI-compatible format (llama.cpp server)
+          requestBody = {
+            model: 'llama3.1',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a security operations AI assistant. Extract query information as JSON.'
+              },
+              {
+                role: 'user',
+                content: systemPrompt
+              }
+            ],
+            temperature: 0.3,
+            max_tokens: 500,
+          };
+        } else {
+          // Generic format
+          requestBody = {
+            prompt: systemPrompt,
+            max_tokens: 500,
+            temperature: 0.3,
+          };
+        }
+
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(requestBody),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Connected to Llama at:', endpoint);
+          return { data, endpoint };
+        }
+      } catch (error) {
+        console.log(`❌ Failed to connect to ${endpoint}:`, error.message);
+        continue;
+      }
+    }
+
+    throw new Error('All Llama endpoints failed');
+  }
+
+  private static parseLlamaResponse(llamaResponse: any, originalQuery: string): ParsedQuery {
+    try {
+      let responseText = '';
+      
+      // Extract response text based on endpoint format
+      if (llamaResponse.endpoint.includes('ollama')) {
+        responseText = llamaResponse.data.response;
+      } else if (llamaResponse.endpoint.includes('chat/completions')) {
+        responseText = llamaResponse.data.choices[0]?.message?.content;
+      } else {
+        responseText = llamaResponse.data.text || llamaResponse.data.response;
+      }
+
+      // Clean up the response and extract JSON
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('No JSON found in Llama response');
+      }
+
+      const parsed = JSON.parse(jsonMatch[0]);
+      
+      return {
+        originalQuery,
+        intent: parsed.intent || 'investigation',
+        entities: Array.isArray(parsed.entities) ? parsed.entities : [],
+        timeRange: parsed.timeRange || { 
+          start: new Date(Date.now() - 24 * 60 * 60 * 1000), 
+          end: new Date() 
+        },
+        confidence: Math.min(Math.max(parsed.confidence || 0.8, 0.0), 1.0),
+        taskType: this.extractTaskType(originalQuery),
+        timestamp: new Date(),
+      };
+    } catch (error) {
+      console.error('Failed to parse Llama response:', error);
+      console.log('Raw Llama response:', llamaResponse);
+      return this.parseQueryLocally(originalQuery);
+    }
+  }
+
+  private static parseQueryLocally(query: string): ParsedQuery {
+    console.log('🔄 Using local parsing fallback');
+    const parsed = this.parseQuery(query);
+    
+    // Add some randomization to simulate uncertainty
+    if (Math.random() < 0.1) {
+      parsed.confidence *= 0.8;
+    }
+    
+    return parsed;
+  }
+
   static generateQuerySuggestions(): string[] {
     return [
       "Why is VPN failing for user 10.1.1.10?",
@@ -257,21 +411,5 @@ export class LLMQueryProcessor {
       "Check bandwidth utilization on core network",
       "Analyze failed login attempts last 24 hours",
     ];
-  }
-
-  static async simulateLLMProcessing(query: string): Promise<ParsedQuery> {
-    // Simulate LLM processing time
-    await new Promise((resolve) =>
-      setTimeout(resolve, Math.random() * 1000 + 500),
-    );
-
-    const parsed = this.parseQuery(query);
-
-    // Add some randomization to simulate LLM uncertainty
-    if (Math.random() < 0.1) {
-      parsed.confidence *= 0.8; // Sometimes reduce confidence
-    }
-
-    return parsed;
   }
 }

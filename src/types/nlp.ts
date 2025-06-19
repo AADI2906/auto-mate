@@ -5,6 +5,7 @@ export interface ParsedQuery {
   confidence: number;
   originalQuery: string;
   timestamp: Date;
+  timeRange: TimeRange;
 }
 
 export type QueryIntent =
