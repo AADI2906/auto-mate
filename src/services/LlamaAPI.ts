@@ -49,7 +49,9 @@ export class LlamaAPI {
     return !this.isHostedEnvironment();
   }
 
+
   // Ultra-precise CLI command generator system prompt
+
   private static systemPrompt = `You are a CLI command generator. Your ONLY job is to provide executable CLI commands in EXACT ORDER for any technical issue.
 
 STRICT RULES:
@@ -66,7 +68,9 @@ MANDATORY FORMAT:
 # Diagnostic commands first (in order)
 command1
 command2
-# Fix/action commands second (in order)
+# Fix/action commands second (in order)  
+
+
 command3
 command4
 \`\`\`
@@ -106,7 +110,8 @@ sudo dhclient -r && sudo dhclient
 }
 \`\`\`
 
-ZERO TOLERANCE for explanations or advice. COMMANDS ONLY.`;
+ZERO TOLERANCE for generic text. COMMANDS ONLY.`;
+
 
   static async isAvailable(): Promise<{ available: boolean; error?: string }> {
     // Skip fetch entirely in hosted environments to avoid CORS errors
@@ -171,7 +176,7 @@ ZERO TOLERANCE for explanations or advice. COMMANDS ONLY.`;
     // Skip entirely in hosted environments to avoid CORS errors
     if (!this.canAccessLocalhost()) {
       const error = "Running in hosted environment - using simulated responses";
-      onError?.(error);
+      onError?.(error)
       const result = await this.mockResponse(query, onStream, onComplete);
       return { ...result, isFromLlama: false, error };
     }
@@ -185,19 +190,12 @@ ZERO TOLERANCE for explanations or advice. COMMANDS ONLY.`;
     }
 
     try {
-      // **Step 1: Send instruction prompt first**
-      const instructionPrompt =
-        "You are a CLI command generator. For any technical issue, respond with ONLY executable CLI commands in bash code blocks in LOGICAL ORDER: diagnostic commands first, then fix commands. NO explanations. NO advice. COMMANDS ONLY in proper execution sequence. Ready to generate ordered command sequences?";
+      // Merge system prompt and user query into a single prompt
+      const mergedPrompt = `${this.systemPrompt}
+Now find the solution to the following input query: ${query}`;
 
-      console.log("Step 1: Sending instruction prompt...");
-      const instructionResponse = await this.chatWithLlama(instructionPrompt);
-      console.log("Instruction Response:", instructionResponse);
-
-      // **Step 2: Wait briefly and then send actual sentence**
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second delay
-
-      console.log("Step 2: Sending actual query...");
-      const finalResponse = await this.chatWithLlama(query, onStream);
+      console.log("Sending merged prompt...");
+      const finalResponse = await this.chatWithLlama(mergedPrompt, onStream);
 
       const solution = this.parseSolution(finalResponse, query);
       onComplete?.(finalResponse, solution);
@@ -309,8 +307,8 @@ ZERO TOLERANCE for explanations or advice. COMMANDS ONLY.`;
 
     const isHosted = this.isHostedEnvironment();
     const mockPrefix = isHosted
-      ? "🟡 **Simulated Response** (Running in hosted environment)\n\n"
-      : "🔄 **Simulated Response** (Llama not available locally)\n\n";
+      ? " **Simulated Response** (Running in hosted environment)\n\n"
+      : " **Simulated Response** (Llama not available locally)\n\n";
 
     onStream?.(mockPrefix);
     fullResponse += mockPrefix;
@@ -805,7 +803,7 @@ ping 8.8.8.8
     }
 
     // Estimate time based on complexity
-    let estimatedTime = "5-10 minutes";
+    let estimatedTime = "5-15 minutes";
     if (severity === "high" || commandCount > 8) {
       estimatedTime = "10-15 minutes";
     } else if (commandCount <= 3) {

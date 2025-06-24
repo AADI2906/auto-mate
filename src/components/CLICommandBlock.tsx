@@ -40,9 +40,7 @@ export const CLICommandBlock: React.FC<CLICommandBlockProps> = ({
   }>({});
   const [lastExecutionMethod, setLastExecutionMethod] = useState<string>("");
   const [showInstructions, setShowInstructions] = useState(false);
-  const [backendAvailable, setBackendAvailable] = useState<boolean | null>(
-    null,
-  );
+  const [backendAvailable, setBackendAvailable] = useState<boolean | null>(null);
 
   const platform = CommandExecutor.detectPlatform();
   const platformEmoji = CommandExecutor.getPlatformEmoji();
@@ -62,14 +60,12 @@ export const CLICommandBlock: React.FC<CLICommandBlockProps> = ({
   }>({});
 
   const [showVisualization, setShowVisualization] = useState(false);
-  const [executedCommands, setExecutedCommands] = useState<
-    Array<{
-      command: string;
-      output: string;
-      stderr?: string;
-      returncode?: number;
-    }>
-  >([]);
+  const [executedCommands, setExecutedCommands] = useState<Array<{
+    command: string;
+    output: string;
+    stderr?: string;
+    returncode?: number;
+  }>>([]);
 
   const executeCommand = async (command: string, index: number) => {
     setExecutionStatus((prev) => ({ ...prev, [index]: "executing" }));
@@ -98,13 +94,13 @@ export const CLICommandBlock: React.FC<CLICommandBlockProps> = ({
           setExecutedCommands((prev) => {
             const newCommand = {
               command: command,
-              output: result.output || "",
+              output: result.output || '',
               stderr: result.stderr,
               returncode: result.returncode,
             };
 
             // Replace existing command or add new one
-            const filtered = prev.filter((cmd) => cmd.command !== command);
+            const filtered = prev.filter(cmd => cmd.command !== command);
             return [...filtered, newCommand];
           });
 
@@ -119,12 +115,9 @@ export const CLICommandBlock: React.FC<CLICommandBlockProps> = ({
         }
 
         // Reset status after 5 seconds for backend results (to show output)
-        setTimeout(
-          () => {
-            setExecutionStatus((prev) => ({ ...prev, [index]: "idle" }));
-          },
-          result.method === "backend" ? 5000 : 3000,
-        );
+        setTimeout(() => {
+          setExecutionStatus((prev) => ({ ...prev, [index]: "idle" }));
+        }, result.method === "backend" ? 5000 : 3000);
       } else {
         setExecutionStatus((prev) => ({ ...prev, [index]: "error" }));
 
@@ -294,14 +287,10 @@ export const CLICommandBlock: React.FC<CLICommandBlockProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => setShowVisualization(!showVisualization)}
-              className={`h-7 px-2 text-xs ${showVisualization ? "text-blue-400 bg-blue-400/10" : ""}`}
+              className={`h-7 px-2 text-xs ${showVisualization ? 'text-blue-400 bg-blue-400/10' : ''}`}
               title="Toggle data visualization"
             >
-              {showVisualization ? (
-                <EyeOff className="h-3 w-3" />
-              ) : (
-                <BarChart3 className="h-3 w-3" />
-              )}
+              {showVisualization ? <EyeOff className="h-3 w-3" /> : <BarChart3 className="h-3 w-3" />}
             </Button>
           )}
           <Button
@@ -492,16 +481,10 @@ export const CLICommandBlock: React.FC<CLICommandBlockProps> = ({
             <span className="font-medium text-blue-400">Expected Results</span>
           </div>
           <div className="space-y-1 text-blue-300">
-            <div>
-              <strong>Data Type:</strong> {metadata.data_type}
-            </div>
-            <div>
-              <strong>Output:</strong> {metadata.expected_output}
-            </div>
+            <div><strong>Data Type:</strong> {metadata.data_type}</div>
+            <div><strong>Output:</strong> {metadata.expected_output}</div>
             {metadata.key_metrics && metadata.key_metrics.length > 0 && (
-              <div>
-                <strong>Key Metrics:</strong> {metadata.key_metrics.join(", ")}
-              </div>
+              <div><strong>Key Metrics:</strong> {metadata.key_metrics.join(', ')}</div>
             )}
           </div>
         </div>
