@@ -559,19 +559,21 @@ class RealSystemMetricsCollector {
 
       if (this.platform === "macos" || this.platform === "linux") {
         // Network interfaces
-        const ifconfigResult = await executeCommand("ifconfig");
+        const ifconfigResult = await CommandExecutor.executeCommand("ifconfig");
         // Parse ifconfig output (simplified)
 
         // Network connections
-        const netstatResult = await executeCommand("netstat -an | head -20");
-        const netstatLines = netstatResult.output.split("\n");
+        const netstatResult = await CommandExecutor.executeCommand(
+          "netstat -an | head -20",
+        );
+        const netstatLines = netstatResult.output?.split("\n") || [];
 
         for (const line of netstatLines) {
           if (line.includes("LISTEN") || line.includes("ESTABLISHED")) {
             const parts = line.trim().split(/\s+/);
             if (parts.length >= 4) {
               const localAddr = parts[3].split(":");
-              const remoteAddr = parts[4].split(":");
+              const remoteAddr = parts[4]?.split(":") || [];
 
               connections.push({
                 protocol: parts[0] || "unknown",
@@ -586,24 +588,25 @@ class RealSystemMetricsCollector {
         }
       } else if (this.platform === "windows") {
         // Network connections on Windows
-        const netstatResult = await executeCommand(
-          "netstat -an | findstr LISTENING",
-        );
-        const netstatLines = netstatResult.output.split("\n");
+        const netstatResult =
+          await CommandExecutor.executeCommand("netstat -an");
+        const netstatLines = netstatResult.output?.split("\n") || [];
 
         for (const line of netstatLines) {
-          const parts = line.trim().split(/\s+/);
-          if (parts.length >= 4) {
-            const localAddr = parts[1].split(":");
+          if (line.includes("LISTENING")) {
+            const parts = line.trim().split(/\s+/);
+            if (parts.length >= 4) {
+              const localAddr = parts[1].split(":");
 
-            connections.push({
-              protocol: parts[0] || "unknown",
-              localAddress: localAddr[0] || "",
-              localPort: parseInt(localAddr[localAddr.length - 1]) || 0,
-              remoteAddress: "",
-              remotePort: 0,
-              state: parts[3] || "unknown",
-            });
+              connections.push({
+                protocol: parts[0] || "unknown",
+                localAddress: localAddr[0] || "",
+                localPort: parseInt(localAddr[localAddr.length - 1]) || 0,
+                remoteAddress: "",
+                remotePort: 0,
+                state: parts[3] || "unknown",
+              });
+            }
           }
         }
       }
