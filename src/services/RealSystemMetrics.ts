@@ -324,8 +324,9 @@ class RealSystemMetricsCollector {
 
       if (this.platform === "macos" || this.platform === "linux") {
         // Disk usage
-        const dfResult = await executeCommand("df -h / | tail -1");
-        const dfMatch = dfResult.output.match(
+        const dfResult =
+          await CommandExecutor.executeCommand("df -h / | tail -1");
+        const dfMatch = dfResult.output?.match(
           /\s+(\d+(?:\.\d+)?[KMGT]?)\s+(\d+(?:\.\d+)?[KMGT]?)\s+(\d+(?:\.\d+)?[KMGT]?)\s+(\d+)%/,
         );
 
@@ -337,10 +338,10 @@ class RealSystemMetricsCollector {
 
         // Disk I/O (Linux only)
         if (this.platform === "linux") {
-          const ioResult = await executeCommand(
+          const ioResult = await CommandExecutor.executeCommand(
             "cat /proc/diskstats | head -1",
           );
-          const ioMatch = ioResult.output.match(
+          const ioMatch = ioResult.output?.match(
             /\s+(\d+)\s+\d+\s+(\d+)\s+\d+\s+\d+\s+(\d+)\s+(\d+)/,
           );
           if (ioMatch) {
@@ -350,11 +351,11 @@ class RealSystemMetricsCollector {
         }
       } else if (this.platform === "windows") {
         // Disk usage on Windows
-        const diskResult = await executeCommand(
+        const diskResult = await CommandExecutor.executeCommand(
           'wmic logicaldisk where caption="C:" get Size,FreeSpace /value',
         );
-        const sizeMatch = diskResult.output.match(/Size=(\d+)/);
-        const freeMatch = diskResult.output.match(/FreeSpace=(\d+)/);
+        const sizeMatch = diskResult.output?.match(/Size=(\d+)/);
+        const freeMatch = diskResult.output?.match(/FreeSpace=(\d+)/);
 
         if (sizeMatch) total = parseInt(sizeMatch[1]);
         if (freeMatch) available = parseInt(freeMatch[1]);
