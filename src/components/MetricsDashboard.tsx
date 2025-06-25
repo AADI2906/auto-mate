@@ -247,14 +247,24 @@ export const MetricsDashboard: React.FC = () => {
       let hostname = "Unknown";
       let internetSpeed = 0;
 
+      // Get hostname from browser/system info instead of backend
       try {
-        // Try to get hostname - simple command that should work
-        const hostnameResult = await CommandExecutor.executeCommand("hostname");
-        if (hostnameResult.success && hostnameResult.output) {
-          hostname = hostnameResult.output.trim();
+        // Try multiple methods to get hostname/system info
+        if (typeof window !== "undefined") {
+          hostname = window.location.hostname || "localhost";
+
+          // If we're in a browser environment, try to get more info
+          if (hostname === "localhost" || hostname.includes("127.0.0.1")) {
+            // Try to get a better identifier
+            const userAgent = navigator.userAgent;
+            const platform = navigator.platform;
+            hostname =
+              `${platform}-${userAgent.split(" ")[0]}` || "Unknown System";
+          }
         }
       } catch (e) {
         console.warn("Could not get hostname:", e);
+        hostname = "Unknown System";
       }
 
       // Test internet speed (run in background)
