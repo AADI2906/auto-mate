@@ -243,13 +243,13 @@ class RealSystemMetricsCollector {
 
       if (this.platform === "macos") {
         // Memory info on macOS
-        const vmResult = await executeCommand("vm_stat");
+        const vmResult = await CommandExecutor.executeCommand("vm_stat");
         const pageSize = 4096; // 4KB pages on macOS
 
-        const pagesMatch = vmResult.output.match(/Pages free:\s+(\d+)/);
-        const wiredMatch = vmResult.output.match(/Pages wired down:\s+(\d+)/);
-        const activeMatch = vmResult.output.match(/Pages active:\s+(\d+)/);
-        const inactiveMatch = vmResult.output.match(/Pages inactive:\s+(\d+)/);
+        const pagesMatch = vmResult.output?.match(/Pages free:\s+(\d+)/);
+        const wiredMatch = vmResult.output?.match(/Pages wired down:\s+(\d+)/);
+        const activeMatch = vmResult.output?.match(/Pages active:\s+(\d+)/);
+        const inactiveMatch = vmResult.output?.match(/Pages inactive:\s+(\d+)/);
 
         if (pagesMatch && wiredMatch && activeMatch && inactiveMatch) {
           const freePages = parseInt(pagesMatch[1]);
@@ -264,15 +264,16 @@ class RealSystemMetricsCollector {
         }
       } else if (this.platform === "linux") {
         // Memory info on Linux
-        const memResult = await executeCommand("cat /proc/meminfo");
-        const totalMatch = memResult.output.match(/MemTotal:\s+(\d+)\s+kB/);
-        const availableMatch = memResult.output.match(
+        const memResult =
+          await CommandExecutor.executeCommand("cat /proc/meminfo");
+        const totalMatch = memResult.output?.match(/MemTotal:\s+(\d+)\s+kB/);
+        const availableMatch = memResult.output?.match(
           /MemAvailable:\s+(\d+)\s+kB/,
         );
-        const swapTotalMatch = memResult.output.match(
+        const swapTotalMatch = memResult.output?.match(
           /SwapTotal:\s+(\d+)\s+kB/,
         );
-        const swapFreeMatch = memResult.output.match(/SwapFree:\s+(\d+)\s+kB/);
+        const swapFreeMatch = memResult.output?.match(/SwapFree:\s+(\d+)\s+kB/);
 
         if (totalMatch) total = parseInt(totalMatch[1]) * 1024;
         if (availableMatch) available = parseInt(availableMatch[1]) * 1024;
@@ -285,13 +286,13 @@ class RealSystemMetricsCollector {
         }
       } else if (this.platform === "windows") {
         // Memory info on Windows
-        const memResult = await executeCommand(
+        const memResult = await CommandExecutor.executeCommand(
           "wmic OS get TotalVisibleMemorySize,FreePhysicalMemory /value",
         );
-        const totalMatch = memResult.output.match(
+        const totalMatch = memResult.output?.match(
           /TotalVisibleMemorySize=(\d+)/,
         );
-        const freeMatch = memResult.output.match(/FreePhysicalMemory=(\d+)/);
+        const freeMatch = memResult.output?.match(/FreePhysicalMemory=(\d+)/);
 
         if (totalMatch) total = parseInt(totalMatch[1]) * 1024;
         if (freeMatch) available = parseInt(freeMatch[1]) * 1024;
