@@ -276,6 +276,17 @@ export const MetricsDashboard: React.FC = () => {
               return { ...metric, value: memoryUsage };
             case "disk":
               return { ...metric, value: Math.random() * 30 + 40 };
+            case "internet":
+              return {
+                ...metric,
+                value: internetSpeed,
+                status:
+                  internetSpeed > 50
+                    ? "good"
+                    : internetSpeed > 10
+                      ? "warning"
+                      : "critical",
+              };
             case "processes":
               return { ...metric, value: Math.floor(Math.random() * 50) + 100 };
             case "uptime":
