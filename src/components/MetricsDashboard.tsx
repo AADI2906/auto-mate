@@ -339,21 +339,16 @@ export const MetricsDashboard: React.FC = () => {
         {/* System Performance Chart */}
         <Card className="p-6 bg-background/50 backdrop-blur border-border/50">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">System Performance</h3>
+            <h3 className="text-lg font-semibold">
+              Real-Time System Performance
+            </h3>
             <div className="flex gap-2">
-              {["1h", "6h", "24h", "7d"].map((range) => (
-                <button
-                  key={range}
-                  onClick={() => setSelectedTimeRange(range)}
-                  className={`px-3 py-1 rounded text-xs ${
-                    selectedTimeRange === range
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                >
-                  {range}
-                </button>
-              ))}
+              <Badge
+                variant="outline"
+                className="text-green-400 border-green-400"
+              >
+                Live Data
+              </Badge>
             </div>
           </div>
           <div className="h-64">
@@ -376,7 +371,7 @@ export const MetricsDashboard: React.FC = () => {
                   stroke="#3b82f6"
                   strokeWidth={2}
                   dot={false}
-                  name="CPU"
+                  name="CPU %"
                 />
                 <Line
                   type="monotone"
@@ -384,67 +379,150 @@ export const MetricsDashboard: React.FC = () => {
                   stroke="#10b981"
                   strokeWidth={2}
                   dot={false}
-                  name="Memory"
+                  name="Memory %"
                 />
                 <Line
                   type="monotone"
-                  dataKey="network"
+                  dataKey="disk"
                   stroke="#f59e0b"
                   strokeWidth={2}
                   dot={false}
-                  name="Network"
+                  name="Disk %"
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </Card>
 
-        {/* Threat Distribution */}
+        {/* Process CPU Distribution */}
         <Card className="p-6 bg-background/50 backdrop-blur border-border/50">
-          <h3 className="text-lg font-semibold mb-4">Threat Distribution</h3>
+          <h3 className="text-lg font-semibold mb-4">Top CPU Processes</h3>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={threatDistribution}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={({ name, percent }) =>
-                    `${name} ${(percent * 100).toFixed(0)}%`
-                  }
-                  labelLine={false}
-                >
-                  {threatDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      return (
-                        <div className="bg-card/95 backdrop-blur border border-border rounded-lg p-3 shadow-lg">
-                          <p className="text-sm font-medium">{data.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {data.value} incidents
-                          </p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            {processDistribution.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={processDistribution}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, value }) => `${name} ${value.toFixed(1)}%`}
+                    labelLine={false}
+                  >
+                    {processDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-card/95 backdrop-blur border border-border rounded-lg p-3 shadow-lg">
+                            <p className="text-sm font-medium">{data.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {data.value.toFixed(2)}% CPU usage
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-muted-foreground">Loading process data...</p>
+              </div>
+            )}
           </div>
         </Card>
 
-        {/* Network Latency */}
+        {/* System Information */}
         <Card className="p-6 bg-background/50 backdrop-blur border-border/50">
-          <h3 className="text-lg font-semibold mb-4">Network Latency</h3>
+          <h3 className="text-lg font-semibold mb-4">System Information</h3>
+          <div className="space-y-4">
+            {systemMetrics && (
+              <>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">
+                    Platform
+                  </span>
+                  <span className="font-medium capitalize">
+                    {systemMetrics.system.platform}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">
+                    Hostname
+                  </span>
+                  <span className="font-medium">
+                    {systemMetrics.system.hostname}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">
+                    CPU Model
+                  </span>
+                  <span className="font-medium text-right max-w-xs truncate">
+                    {systemMetrics.cpu.model || "Unknown"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">
+                    Total Memory
+                  </span>
+                  <span className="font-medium">
+                    {formatBytes(systemMetrics.memory.total)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">
+                    Available Memory
+                  </span>
+                  <span className="font-medium">
+                    {formatBytes(systemMetrics.memory.available)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">
+                    Total Disk
+                  </span>
+                  <span className="font-medium">
+                    {formatBytes(systemMetrics.disk.total)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">
+                    Available Disk
+                  </span>
+                  <span className="font-medium">
+                    {formatBytes(systemMetrics.disk.available)}
+                  </span>
+                </div>
+                {systemMetrics.system.loadAverage.length > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">
+                      Load Average
+                    </span>
+                    <span className="font-medium">
+                      {systemMetrics.system.loadAverage
+                        .map((load) => load.toFixed(2))
+                        .join(", ")}
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </Card>
+
+        {/* Process Activity */}
+        <Card className="p-6 bg-background/50 backdrop-blur border-border/50">
+          <h3 className="text-lg font-semibold mb-4">Process Activity</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={timeSeriesData}>
@@ -461,39 +539,9 @@ export const MetricsDashboard: React.FC = () => {
                 <Tooltip content={<CustomTooltip />} />
                 <Area
                   type="monotone"
-                  dataKey="latency"
+                  dataKey="processes"
                   stroke="#8b5cf6"
                   fill="#8b5cf6"
-                  fillOpacity={0.3}
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
-
-        {/* Threat Timeline */}
-        <Card className="p-6 bg-background/50 backdrop-blur border-border/50">
-          <h3 className="text-lg font-semibold mb-4">Threat Timeline</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={timeSeriesData}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="hsl(var(--border))"
-                />
-                <XAxis
-                  dataKey="timestamp"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                <Tooltip content={<CustomTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="threats"
-                  stroke="#ef4444"
-                  fill="#ef4444"
                   fillOpacity={0.3}
                   strokeWidth={2}
                 />
