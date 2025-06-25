@@ -417,6 +417,27 @@ export const MetricsDashboard: React.FC = () => {
         timestamp: new Date().toISOString(),
       });
 
+      // Update process distribution with real data
+      const topProcesses = processes
+        .sort((a, b) => b.cpuUsage - a.cpuUsage)
+        .slice(0, 5);
+
+      const colors = ["#ef4444", "#f59e0b", "#eab308", "#3b82f6", "#8b5cf6"];
+      const newProcessDistribution = topProcesses.map((process, index) => ({
+        name:
+          process.name.length > 15
+            ? process.name.substring(0, 15) + "..."
+            : process.name,
+        value: Math.round(process.cpuUsage * 10) / 10,
+        color: colors[index % colors.length],
+        fullName: process.name,
+        pid: process.pid,
+        memory: process.memoryUsage,
+        status: process.status,
+      }));
+
+      setProcessDistribution(newProcessDistribution);
+
       // Add data point to time series
       const newPoint: TimeSeriesData = {
         timestamp: new Date().toISOString().slice(11, 19),
