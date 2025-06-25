@@ -127,90 +127,95 @@ class RealSystemMetricsCollector {
 
       if (this.platform === "macos") {
         // CPU usage on macOS
-        const topResult = await executeCommand(
+        const topResult = await CommandExecutor.executeCommand(
           'top -l 1 -n 0 | grep "CPU usage"',
         );
-        const cpuMatch = topResult.output.match(/(\d+\.\d+)% user/);
+        const cpuMatch = topResult.output?.match(/(\d+\.\d+)% user/);
         if (cpuMatch) {
           usage = parseFloat(cpuMatch[1]);
         }
 
         // CPU cores
-        const coresResult = await executeCommand("sysctl -n hw.ncpu");
-        cores = parseInt(coresResult.output.trim()) || 1;
+        const coresResult =
+          await CommandExecutor.executeCommand("sysctl -n hw.ncpu");
+        cores = parseInt(coresResult.output?.trim() || "1") || 1;
 
         // CPU frequency (in Hz, convert to MHz)
-        const freqResult = await executeCommand(
+        const freqResult = await CommandExecutor.executeCommand(
           "sysctl -n hw.cpufrequency_max",
         );
         frequency =
-          Math.round(parseInt(freqResult.output.trim()) / 1000000) || 0;
+          Math.round(parseInt(freqResult.output?.trim() || "0") / 1000000) || 0;
 
         // CPU model
-        const modelResult = await executeCommand(
+        const modelResult = await CommandExecutor.executeCommand(
           "sysctl -n machdep.cpu.brand_string",
         );
-        model = modelResult.output.trim();
+        model = modelResult.output?.trim() || "";
       } else if (this.platform === "linux") {
         // CPU usage on Linux
-        const topResult = await executeCommand('top -bn1 | grep "Cpu(s)"');
-        const cpuMatch = topResult.output.match(/(\d+\.\d+)%us/);
+        const topResult = await CommandExecutor.executeCommand(
+          'top -bn1 | grep "Cpu(s)"',
+        );
+        const cpuMatch = topResult.output?.match(/(\d+\.\d+)%us/);
         if (cpuMatch) {
           usage = parseFloat(cpuMatch[1]);
         }
 
         // CPU cores
-        const coresResult = await executeCommand("nproc");
-        cores = parseInt(coresResult.output.trim()) || 1;
+        const coresResult = await CommandExecutor.executeCommand("nproc");
+        cores = parseInt(coresResult.output?.trim() || "1") || 1;
 
         // CPU frequency
-        const freqResult = await executeCommand(
+        const freqResult = await CommandExecutor.executeCommand(
           'cat /proc/cpuinfo | grep "cpu MHz" | head -1',
         );
-        const freqMatch = freqResult.output.match(/(\d+\.\d+)/);
+        const freqMatch = freqResult.output?.match(/(\d+\.\d+)/);
         if (freqMatch) {
           frequency = Math.round(parseFloat(freqMatch[1]));
         }
 
         // CPU model
-        const modelResult = await executeCommand(
+        const modelResult = await CommandExecutor.executeCommand(
           'cat /proc/cpuinfo | grep "model name" | head -1',
         );
-        const modelMatch = modelResult.output.match(/model name\s*:\s*(.+)/);
+        const modelMatch = modelResult.output?.match(/model name\s*:\s*(.+)/);
         if (modelMatch) {
           model = modelMatch[1].trim();
         }
       } else if (this.platform === "windows") {
         // CPU usage on Windows
-        const cpuResult = await executeCommand(
+        const cpuResult = await CommandExecutor.executeCommand(
           "wmic cpu get loadpercentage /value",
         );
-        const cpuMatch = cpuResult.output.match(/LoadPercentage=(\d+)/);
+        const cpuMatch = cpuResult.output?.match(/LoadPercentage=(\d+)/);
         if (cpuMatch) {
           usage = parseInt(cpuMatch[1]);
         }
 
         // CPU cores
-        const coresResult = await executeCommand(
+        const coresResult = await CommandExecutor.executeCommand(
           "wmic cpu get NumberOfCores /value",
         );
-        const coresMatch = coresResult.output.match(/NumberOfCores=(\d+)/);
+        const coresMatch = coresResult.output?.match(/NumberOfCores=(\d+)/);
         if (coresMatch) {
           cores = parseInt(coresMatch[1]);
         }
 
         // CPU frequency
-        const freqResult = await executeCommand(
+        const freqResult = await CommandExecutor.executeCommand(
           "wmic cpu get MaxClockSpeed /value",
         );
-        const freqMatch = freqResult.output.match(/MaxClockSpeed=(\d+)/);
+        const freqMatch = freqResult.output?.match(/MaxClockSpeed=(\d+)/);
         if (freqMatch) {
           frequency = parseInt(freqMatch[1]);
         }
 
         // CPU model
-        const modelResult = await executeCommand("wmic cpu get Name /value");
-        const modelMatch = modelResult.output.match(/Name=(.+)/);
+        const modelResult = await CommandExecutor.executeCommand(
+          "wmic cpu get Name /value",
+        );
+        const modelMatch = modelResult.output?.match(/Name=(.+)/);
         if (modelMatch) {
           model = modelMatch[1].trim();
         }
