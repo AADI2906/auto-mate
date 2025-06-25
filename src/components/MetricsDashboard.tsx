@@ -161,7 +161,7 @@ export const MetricsDashboard: React.FC = () => {
         unit: "%",
         change: memoryChange,
         status: getStatusFromValue(realMetrics.memory.percentage, "memory"),
-        icon: Memory,
+        icon: MemoryStick,
       },
       {
         id: "disk",
