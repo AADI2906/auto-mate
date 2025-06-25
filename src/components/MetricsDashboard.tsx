@@ -97,102 +97,157 @@ const getStatusColor = (status: string) => {
 };
 
 export const MetricsDashboard: React.FC = () => {
-  const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesData[]>(
-    generateTimeSeriesData(),
+  const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesData[]>([]);
+  const [selectedTimeRange, setSelectedTimeRange] = useState("Live");
+  const [systemMetrics, setSystemMetrics] = useState<RealSystemMetrics | null>(
+    null,
   );
-  const [selectedTimeRange, setSelectedTimeRange] = useState("24h");
+  const [previousMetrics, setPreviousMetrics] =
+    useState<RealSystemMetrics | null>(null);
 
-  const [metrics, setMetrics] = useState<Metric[]>([
-    {
-      id: "cpu",
-      name: "CPU Usage",
-      value: 67,
-      unit: "%",
-      change: 2.3,
-      status: "warning",
-      icon: Cpu,
-    },
-    {
-      id: "memory",
-      name: "Memory Usage",
-      value: 78,
-      unit: "%",
-      change: -1.2,
-      status: "good",
-      icon: HardDrive,
-    },
-    {
-      id: "network",
-      name: "Network Throughput",
-      value: 142,
-      unit: "Mbps",
-      change: 5.7,
-      status: "good",
-      icon: Network,
-    },
-    {
-      id: "latency",
-      name: "Avg Latency",
-      value: 23,
-      unit: "ms",
-      change: -0.8,
-      status: "good",
-      icon: Activity,
-    },
-    {
-      id: "active_users",
-      name: "Active Users",
-      value: 1247,
-      unit: "",
-      change: 12,
-      status: "good",
-      icon: Users,
-    },
-    {
-      id: "threats_blocked",
-      name: "Threats Blocked",
-      value: 89,
-      unit: "/hour",
-      change: 15,
-      status: "critical",
-      icon: Globe,
-    },
-  ]);
+  const [metrics, setMetrics] = useState<Metric[]>([]);
+  const [processDistribution, setProcessDistribution] = useState<
+    ProcessDistribution[]
+  >([]);
 
-  const updateMetrics = () => {
-    setMetrics((prev) =>
-      prev.map((metric) => ({
-        ...metric,
-        value: Math.max(
-          0,
-          metric.value + (Math.random() - 0.5) * (metric.value * 0.1),
-        ),
-        change: (Math.random() - 0.5) * 10,
-      })),
-    );
+  const calculateChange = (current: number, previous: number): number => {
+    if (previous === 0) return 0;
+    return ((current - previous) / previous) * 100;
   };
 
-  const addNewDataPoint = () => {
+  const getStatusFromValue = (
+    value: number,
+    type: string,
+  ): "good" | "warning" | "critical" => {
+    if (type === "cpu" || type === "memory" || type === "disk") {
+      if (value > 90) return "critical";
+      if (value > 70) return "warning";
+      return "good";
+    }
+    return "good";
+  };
+
+  const updateMetricsFromSystem = (realMetrics: RealSystemMetrics) => {
+    const cpuChange = previousMetrics
+      ? calculateChange(realMetrics.cpu.usage, previousMetrics.cpu.usage)
+      : 0;
+    const memoryChange = previousMetrics
+      ? calculateChange(
+          realMetrics.memory.percentage,
+          previousMetrics.memory.percentage,
+        )
+      : 0;
+    const diskChange = previousMetrics
+      ? calculateChange(
+          realMetrics.disk.percentage,
+          previousMetrics.disk.percentage,
+        )
+      : 0;
+
+    const newMetrics: Metric[] = [
+      {
+        id: "cpu",
+        name: "CPU Usage",
+        value: realMetrics.cpu.usage,
+        unit: "%",
+        change: cpuChange,
+        status: getStatusFromValue(realMetrics.cpu.usage, "cpu"),
+        icon: Cpu,
+      },
+      {
+        id: "memory",
+        name: "Memory Usage",
+        value: realMetrics.memory.percentage,
+        unit: "%",
+        change: memoryChange,
+        status: getStatusFromValue(realMetrics.memory.percentage, "memory"),
+        icon: Memory,
+      },
+      {
+        id: "disk",
+        name: "Disk Usage",
+        value: realMetrics.disk.percentage,
+        unit: "%",
+        change: diskChange,
+        status: getStatusFromValue(realMetrics.disk.percentage, "disk"),
+        icon: HardDrive,
+      },
+      {
+        id: "cores",
+        name: "CPU Cores",
+        value: realMetrics.cpu.cores,
+        unit: "cores",
+        change: 0,
+        status: "good",
+        icon: Server,
+      },
+      {
+        id: "processes",
+        name: "Active Processes",
+        value: realMetrics.processes.length,
+        unit: "procs",
+        change: previousMetrics
+          ? realMetrics.processes.length - previousMetrics.processes.length
+          : 0,
+        status: "good",
+        icon: Activity,
+      },
+      {
+        id: "uptime",
+        name: "System Uptime",
+        value: realMetrics.system.uptime,
+        unit: "sec",
+        change: 0,
+        status: "good",
+        icon: Globe,
+      },
+    ];
+
+    setMetrics(newMetrics);
+
+    // Update process distribution
+    const topProcesses = realMetrics.processes
+      .sort((a, b) => b.cpuUsage - a.cpuUsage)
+      .slice(0, 5);
+
+    const colors = ["#ef4444", "#f59e0b", "#eab308", "#3b82f6", "#8b5cf6"];
+    const newProcessDistribution = topProcesses.map((process, index) => ({
+      name: process.name.split("/").pop() || process.name,
+      value: process.cpuUsage,
+      color: colors[index % colors.length],
+    }));
+
+    setProcessDistribution(newProcessDistribution);
+
+    // Add new time series data point
     const newPoint: TimeSeriesData = {
-      timestamp: new Date().toISOString().slice(11, 16),
-      cpu: Math.floor(Math.random() * 40) + 30,
-      memory: Math.floor(Math.random() * 30) + 50,
-      network: Math.floor(Math.random() * 50) + 25,
-      threats: Math.floor(Math.random() * 10),
-      latency: Math.floor(Math.random() * 50) + 10,
+      timestamp: new Date().toISOString().slice(11, 19),
+      cpu: realMetrics.cpu.usage,
+      memory: realMetrics.memory.percentage,
+      disk: realMetrics.disk.percentage,
+      processes: realMetrics.processes.length,
     };
 
-    setTimeSeriesData((prev) => [...prev.slice(1), newPoint]);
+    setTimeSeriesData((prev) => {
+      const newData = [...prev, newPoint];
+      // Keep only last 30 data points
+      return newData.slice(-30);
+    });
+
+    // Store previous metrics for change calculation
+    setPreviousMetrics(systemMetrics);
   };
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      updateMetrics();
-      addNewDataPoint();
-    }, 5000);
+    const unsubscribe = realSystemMetrics.subscribe((realMetrics) => {
+      setSystemMetrics(realMetrics);
+      updateMetricsFromSystem(realMetrics);
+    });
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      unsubscribe();
+    };
+  }, [systemMetrics, previousMetrics]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
