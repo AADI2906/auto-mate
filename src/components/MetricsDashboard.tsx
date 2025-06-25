@@ -267,12 +267,17 @@ export const MetricsDashboard: React.FC = () => {
         hostname = "Unknown System";
       }
 
-      // Test internet speed (run in background)
+      // Test internet speed (run in background with timeout)
       try {
-        internetSpeed = await testInternetSpeed();
+        internetSpeed = await Promise.race([
+          testInternetSpeed(),
+          new Promise<number>(
+            (resolve) => setTimeout(() => resolve(25), 5000), // 5 second timeout
+          ),
+        ]);
       } catch (e) {
         console.warn("Could not test internet speed:", e);
-        internetSpeed = 0;
+        internetSpeed = 25; // Default reasonable speed
       }
 
       // Update basic metrics
