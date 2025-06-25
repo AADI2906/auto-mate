@@ -27,7 +27,7 @@ import {
   TrendingDown,
   Minus,
   Server,
-  Memory,
+  MemoryStick,
   Wifi,
 } from "lucide-react";
 import {
