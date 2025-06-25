@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AIInsights } from "@/components/AIInsights";
 import { SecurityAlerts } from "@/components/SecurityAlerts";
-import { MetricsDashboard } from "@/components/MetricsDashboard";
+
 import { RealTimeSystemDashboard } from "@/components/RealTimeSystemDashboard";
 import { SimpleAIAssistant } from "@/components/SimpleAIAssistant";
 import {
