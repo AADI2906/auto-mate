@@ -87,8 +87,10 @@ class RealSystemMetricsCollector {
 
   private async detectPlatform() {
     try {
-      const result = await executeCommand("uname -s || echo Windows");
-      const output = result.output.trim().toLowerCase();
+      const result = await CommandExecutor.executeCommand(
+        "uname -s || echo Windows",
+      );
+      const output = result.output?.trim().toLowerCase() || "";
 
       if (output.includes("darwin")) {
         this.platform = "macos";
@@ -96,14 +98,14 @@ class RealSystemMetricsCollector {
         this.platform = "linux";
       } else if (
         output.includes("windows") ||
-        result.output.includes("Windows")
+        result.output?.includes("Windows")
       ) {
         this.platform = "windows";
       }
     } catch (error) {
       // Try Windows command
       try {
-        await executeCommand("ver");
+        await CommandExecutor.executeCommand("ver");
         this.platform = "windows";
       } catch {
         this.platform = "unknown";
