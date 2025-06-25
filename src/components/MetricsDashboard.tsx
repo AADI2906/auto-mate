@@ -238,11 +238,11 @@ export const MetricsDashboard: React.FC = () => {
       setIsLoading(true);
       setError(null);
 
-      // Detect platform first
+      // Detect platform first (browser-based, no fetch required)
       const platform = CommandExecutor.detectPlatform();
 
-      // Get basic system info
-      let cpuUsage = Math.random() * 50 + 25; // Fallback to simulated data
+      // Get basic system info with realistic simulation
+      let cpuUsage = Math.random() * 50 + 25;
       let memoryUsage = Math.random() * 40 + 30;
       let hostname = "Unknown";
       let internetSpeed = 0;
