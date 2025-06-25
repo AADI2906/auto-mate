@@ -296,12 +296,20 @@ export const MetricsDashboard: React.FC = () => {
               <div className="flex items-baseline justify-between">
                 <div className="flex items-baseline gap-1">
                   <span className="text-2xl font-bold">
-                    {typeof metric.value === "number"
-                      ? metric.value.toFixed(metric.unit === "%" ? 0 : 1)
-                      : metric.value}
+                    {metric.id === "uptime"
+                      ? formatUptime(metric.value)
+                      : typeof metric.value === "number"
+                        ? metric.value.toFixed(
+                            metric.unit === "%" ||
+                              metric.unit === "cores" ||
+                              metric.unit === "procs"
+                              ? 0
+                              : 1,
+                          )
+                        : metric.value}
                   </span>
                   <span className="text-sm text-muted-foreground">
-                    {metric.unit}
+                    {metric.id === "uptime" ? "" : metric.unit}
                   </span>
                 </div>
                 <div
