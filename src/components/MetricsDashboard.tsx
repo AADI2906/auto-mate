@@ -240,14 +240,18 @@ export const MetricsDashboard: React.FC = () => {
 
   useEffect(() => {
     const unsubscribe = realSystemMetrics.subscribe((realMetrics) => {
-      setSystemMetrics(realMetrics);
-      updateMetricsFromSystem(realMetrics);
+      setSystemMetrics((prevSystemMetrics) => {
+        // Store previous metrics for change calculation
+        setPreviousMetrics(prevSystemMetrics);
+        updateMetricsFromSystem(realMetrics);
+        return realMetrics;
+      });
     });
 
     return () => {
       unsubscribe();
     };
-  }, [systemMetrics, previousMetrics]);
+  }, []); // Empty dependency array - only run once on mount
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
