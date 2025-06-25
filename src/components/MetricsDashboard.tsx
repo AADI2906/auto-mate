@@ -211,13 +211,8 @@ export const MetricsDashboard: React.FC = () => {
 
   const [processDistribution, setProcessDistribution] = useState<
     ProcessDistribution[]
-  >([
-    { name: "Chrome", value: 25, color: "#ef4444" },
-    { name: "VSCode", value: 20, color: "#f59e0b" },
-    { name: "Node", value: 15, color: "#eab308" },
-    { name: "System", value: 20, color: "#3b82f6" },
-    { name: "Other", value: 20, color: "#8b5cf6" },
-  ]);
+  >([]);
+  const [realProcesses, setRealProcesses] = useState<any[]>([]);
 
   const collectBasicMetrics = () => {
     try {
