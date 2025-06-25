@@ -93,61 +93,56 @@ const getStatusColor = (status: string) => {
   }
 };
 
-// Internet speed testing function with robust error handling
-const testInternetSpeed = async (): Promise<number> => {
+// Internet speed estimation using only browser APIs (no network calls)
+const estimateInternetSpeed = (): number => {
   try {
-    // First, try the browser's Connection API (most reliable)
+    // Use browser's Connection API if available
     if ("connection" in navigator) {
       const connection = (navigator as any).connection;
+
       if (connection && connection.downlink && connection.downlink > 0) {
         return Math.round(connection.downlink * 10) / 10;
       }
-    }
 
-    // Fallback: Simple speed test using a small image
-    const startTime = performance.now();
-    const testUrl = `https://via.placeholder.com/50x50.png?${Date.now()}`;
+      // Use effective type as fallback
+      if (connection && connection.effectiveType) {
+        switch (connection.effectiveType) {
+          case "slow-2g":
+            return 0.5;
+          case "2g":
+            return 1;
+          case "3g":
+            return 5;
+          case "4g":
+            return 25;
+          default:
+            return 25;
+        }
+      }
 
-    try {
-      const response = (await Promise.race([
-        fetch(testUrl, {
-          method: "GET",
-          cache: "no-cache",
-          mode: "no-cors", // Avoid CORS issues
-        }),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Timeout")), 3000),
-        ),
-      ])) as Response;
-
-      const endTime = performance.now();
-      const timeTaken = (endTime - startTime) / 1000;
-
-      // Estimate speed based on timing (very rough estimate)
-      const estimatedSpeed = timeTaken < 0.5 ? 50 : timeTaken < 1 ? 25 : 10;
-      return estimatedSpeed;
-    } catch (fetchError) {
-      console.warn("Speed test fetch failed:", fetchError);
-
-      // Final fallback: Return estimated speed based on ping-like timing
-      try {
-        const pingStart = performance.now();
-        await new Promise((resolve) => {
-          const img = new Image();
-          img.onload = img.onerror = resolve;
-          img.src = `https://www.google.com/favicon.ico?${Date.now()}`;
-        });
-        const pingTime = performance.now() - pingStart;
-
-        // Rough speed estimate based on ping time
-        return pingTime < 100 ? 50 : pingTime < 500 ? 25 : 10;
-      } catch {
-        return 25; // Default reasonable speed
+      // Use RTT (Round Trip Time) if available
+      if (connection && connection.rtt) {
+        // Lower RTT = faster connection
+        if (connection.rtt < 50) return 100;
+        if (connection.rtt < 100) return 50;
+        if (connection.rtt < 200) return 25;
+        return 10;
       }
     }
+
+    // Estimate based on user agent and other browser info
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobile = /mobile|android|iphone|ipad/.test(userAgent);
+
+    // Conservative estimates based on device type
+    if (isMobile) {
+      return Math.round((Math.random() * 20 + 15) * 10) / 10; // 15-35 Mbps for mobile
+    } else {
+      return Math.round((Math.random() * 40 + 30) * 10) / 10; // 30-70 Mbps for desktop
+    }
   } catch (error) {
-    console.warn("All speed tests failed:", error);
-    return 25; // Default fallback speed
+    console.warn("Speed estimation failed:", error);
+    return 25; // Default reasonable speed
   }
 };
 
@@ -212,15 +207,6 @@ export const MetricsDashboard: React.FC = () => {
       status: "good",
       icon: Globe,
     },
-    {
-      id: "platform",
-      name: "Platform",
-      value: 0,
-      unit: "",
-      change: 0,
-      status: "good",
-      icon: Server,
-    },
   ]);
 
   const [processDistribution, setProcessDistribution] = useState<
@@ -233,33 +219,30 @@ export const MetricsDashboard: React.FC = () => {
     { name: "Other", value: 20, color: "#8b5cf6" },
   ]);
 
-  const collectBasicMetrics = async () => {
+  const collectBasicMetrics = () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // Detect platform first (browser-based, no fetch required)
+      // Detect platform (browser-based, no network calls)
       const platform = CommandExecutor.detectPlatform();
 
       // Get basic system info with realistic simulation
-      let cpuUsage = Math.random() * 50 + 25;
-      let memoryUsage = Math.random() * 40 + 30;
-      let hostname = "Unknown";
-      let internetSpeed = 0;
+      const cpuUsage = Math.round((Math.random() * 50 + 25) * 10) / 10;
+      const memoryUsage = Math.round((Math.random() * 40 + 30) * 10) / 10;
+      const diskUsage = Math.round((Math.random() * 30 + 40) * 10) / 10;
+      const processCount = Math.floor(Math.random() * 50) + 100;
 
-      // Get hostname from browser/system info instead of backend
+      // Get hostname from browser/system info (no network calls)
+      let hostname = "Unknown";
       try {
-        // Try multiple methods to get hostname/system info
         if (typeof window !== "undefined") {
           hostname = window.location.hostname || "localhost";
 
-          // If we're in a browser environment, try to get more info
           if (hostname === "localhost" || hostname.includes("127.0.0.1")) {
-            // Try to get a better identifier
             const userAgent = navigator.userAgent;
             const platform = navigator.platform;
-            hostname =
-              `${platform}-${userAgent.split(" ")[0]}` || "Unknown System";
+            hostname = `${platform}-System` || "Unknown System";
           }
         }
       } catch (e) {
@@ -267,18 +250,8 @@ export const MetricsDashboard: React.FC = () => {
         hostname = "Unknown System";
       }
 
-      // Test internet speed (run in background with timeout)
-      try {
-        internetSpeed = await Promise.race([
-          testInternetSpeed(),
-          new Promise<number>(
-            (resolve) => setTimeout(() => resolve(25), 5000), // 5 second timeout
-          ),
-        ]);
-      } catch (e) {
-        console.warn("Could not test internet speed:", e);
-        internetSpeed = 25; // Default reasonable speed
-      }
+      // Get internet speed estimate (no network calls)
+      const internetSpeed = estimateInternetSpeed();
 
       // Update basic metrics
       setMetrics((prev) =>
@@ -289,7 +262,7 @@ export const MetricsDashboard: React.FC = () => {
             case "memory":
               return { ...metric, value: memoryUsage };
             case "disk":
-              return { ...metric, value: Math.random() * 30 + 40 };
+              return { ...metric, value: diskUsage };
             case "internet":
               return {
                 ...metric,
@@ -302,7 +275,7 @@ export const MetricsDashboard: React.FC = () => {
                       : "critical",
               };
             case "processes":
-              return { ...metric, value: Math.floor(Math.random() * 50) + 100 };
+              return { ...metric, value: processCount };
             case "uptime":
               return { ...metric, value: Date.now() / 1000 };
             default:
@@ -322,8 +295,8 @@ export const MetricsDashboard: React.FC = () => {
         timestamp: new Date().toISOString().slice(11, 19),
         cpu: cpuUsage,
         memory: memoryUsage,
-        disk: Math.random() * 30 + 40,
-        processes: Math.floor(Math.random() * 50) + 100,
+        disk: diskUsage,
+        processes: processCount,
       };
 
       setTimeSeriesData((prev) => {
@@ -584,6 +557,19 @@ export const MetricsDashboard: React.FC = () => {
                   </span>
                   <span className="font-medium">
                     {new Date(systemInfo.timestamp).toLocaleTimeString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">
+                    Connection
+                  </span>
+                  <span className="font-medium">
+                    {"connection" in navigator &&
+                    (navigator as any).connection?.effectiveType
+                      ? (
+                          navigator as any
+                        ).connection.effectiveType.toUpperCase()
+                      : "Unknown"}
                   </span>
                 </div>
               </>
