@@ -494,8 +494,9 @@ class RealSystemMetricsCollector {
       const processes: RealProcessInfo[] = [];
 
       if (this.platform === "macos" || this.platform === "linux") {
-        const psResult = await executeCommand("ps aux | head -20");
-        const lines = psResult.output.split("\n").slice(1); // Skip header
+        const psResult =
+          await CommandExecutor.executeCommand("ps aux | head -20");
+        const lines = psResult.output?.split("\n").slice(1) || []; // Skip header
 
         for (const line of lines) {
           if (!line.trim()) continue;
@@ -515,10 +516,12 @@ class RealSystemMetricsCollector {
           }
         }
       } else if (this.platform === "windows") {
-        const taskResult = await executeCommand("tasklist /fo csv | head -20");
-        const lines = taskResult.output.split("\n").slice(1); // Skip header
+        const taskResult =
+          await CommandExecutor.executeCommand("tasklist /fo csv");
+        const lines = taskResult.output?.split("\n").slice(1) || []; // Skip header
 
-        for (const line of lines) {
+        for (const line of lines.slice(0, 20)) {
+          // Limit to first 20
           if (!line.trim()) continue;
 
           const parts = line.split(",").map((part) => part.replace(/"/g, ""));
