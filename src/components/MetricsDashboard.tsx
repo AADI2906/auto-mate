@@ -167,74 +167,9 @@ const collectRealProcesses = async (): Promise<any[]> => {
       });
     }
 
-    // Try to get system processes using command execution (with fallback)
+    // Skip system processes collection to avoid fetch errors
+    // Use only browser-based and simulated process data
     let systemProcesses: any[] = [];
-    try {
-      // First check if backend is available to avoid fetch errors
-      const isBackendAvailable = await CommandExecutor.checkBackendHealth();
-
-      if (isBackendAvailable) {
-        let command = "";
-
-        if (platform === "windows") {
-          command = 'tasklist /fo csv | findstr /v "Image Name" | head -10';
-        } else if (platform === "macos" || platform === "linux") {
-          command = "ps aux | head -11 | tail -10";
-        }
-
-        if (command) {
-          const result = await CommandExecutor.executeCommand(command);
-
-          if (result.success && result.output) {
-            const lines = result.output
-              .split("\n")
-              .filter((line) => line.trim());
-
-            for (const line of lines) {
-              if (platform === "windows") {
-                // Parse Windows tasklist CSV format
-                const parts = line
-                  .split(",")
-                  .map((part) => part.replace(/"/g, ""));
-                if (parts.length >= 5) {
-                  systemProcesses.push({
-                    name: parts[0] || "Unknown",
-                    pid: parseInt(parts[1]) || 0,
-                    cpuUsage: Math.random() * 20, // Windows tasklist doesn't show CPU%
-                    memoryUsage:
-                      parseInt(parts[4]?.replace(/[^\d]/g, "")) / 1024 || 0, // Convert KB to MB
-                    status: parts[3] || "running",
-                    type: "system",
-                  });
-                }
-              } else {
-                // Parse Unix ps format
-                const parts = line.trim().split(/\s+/);
-                if (parts.length >= 11) {
-                  const processName =
-                    parts[10]?.split("/").pop() || parts[10] || "Unknown";
-                  systemProcesses.push({
-                    name: processName,
-                    pid: parseInt(parts[1]) || 0,
-                    cpuUsage: parseFloat(parts[2]) || 0,
-                    memoryUsage: parseFloat(parts[5]) / 1024 || 0, // Convert KB to MB
-                    memoryPercent: parseFloat(parts[3]) || 0,
-                    status: parts[7] || "running",
-                    user: parts[0] || "unknown",
-                    type: "system",
-                  });
-                }
-              }
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.warn(
-        "Backend not available, using simulated process data:",
-        error,
-      );
-    }
 
     // If no system processes, generate realistic ones based on platform
     if (systemProcesses.length === 0) {
