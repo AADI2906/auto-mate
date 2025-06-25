@@ -93,6 +93,65 @@ const getStatusColor = (status: string) => {
   }
 };
 
+// Internet speed testing function
+const testInternetSpeed = async (): Promise<number> => {
+  try {
+    // Use multiple small requests to estimate download speed
+    const testSizes = [100, 500, 1000]; // KB
+    const speeds: number[] = [];
+
+    for (const size of testSizes) {
+      const startTime = performance.now();
+
+      // Create a test URL with random data to avoid caching
+      const testUrl = `https://httpbin.org/bytes/${size * 1024}?${Math.random()}`;
+
+      try {
+        const response = await fetch(testUrl, {
+          method: "GET",
+          cache: "no-cache",
+        });
+
+        if (response.ok) {
+          await response.blob(); // Download the data
+          const endTime = performance.now();
+          const timeTaken = (endTime - startTime) / 1000; // Convert to seconds
+          const speedKbps = (size * 8) / timeTaken; // Convert KB to Kbps
+          const speedMbps = speedKbps / 1000; // Convert to Mbps
+
+          speeds.push(speedMbps);
+        }
+      } catch (error) {
+        console.warn(`Speed test failed for ${size}KB:`, error);
+      }
+    }
+
+    if (speeds.length === 0) {
+      // Fallback: Use connection API if available
+      if ("connection" in navigator) {
+        const connection = (navigator as any).connection;
+        return connection.downlink || 0; // This gives estimated Mbps
+      }
+      return 0; // No speed data available
+    }
+
+    // Return average speed
+    const averageSpeed =
+      speeds.reduce((sum, speed) => sum + speed, 0) / speeds.length;
+    return Math.round(averageSpeed * 10) / 10; // Round to 1 decimal place
+  } catch (error) {
+    console.error("Internet speed test failed:", error);
+
+    // Fallback: Use connection API if available
+    if ("connection" in navigator) {
+      const connection = (navigator as any).connection;
+      return connection.downlink || 0;
+    }
+
+    return 0;
+  }
+};
+
 export const MetricsDashboard: React.FC = () => {
   const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
