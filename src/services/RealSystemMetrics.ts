@@ -1,4 +1,4 @@
-import { executeCommand } from "@/utils/CommandExecutor";
+import { CommandExecutor } from "@/utils/CommandExecutor";
 
 export interface RealSystemMetrics {
   cpu: {
