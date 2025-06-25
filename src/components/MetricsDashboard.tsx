@@ -128,6 +128,15 @@ export const MetricsDashboard: React.FC = () => {
       icon: HardDrive,
     },
     {
+      id: "internet",
+      name: "Internet Speed",
+      value: 0,
+      unit: "Mbps",
+      change: 0,
+      status: "good",
+      icon: Wifi,
+    },
+    {
       id: "processes",
       name: "Running Processes",
       value: 0,
