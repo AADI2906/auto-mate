@@ -329,7 +329,7 @@ export const MetricsDashboard: React.FC = () => {
   >([]);
   const [realProcesses, setRealProcesses] = useState<any[]>([]);
 
-  const collectBasicMetrics = () => {
+  const collectBasicMetrics = async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -337,11 +337,28 @@ export const MetricsDashboard: React.FC = () => {
       // Detect platform (browser-based, no network calls)
       const platform = CommandExecutor.detectPlatform();
 
-      // Get basic system info with realistic simulation
-      const cpuUsage = Math.round((Math.random() * 50 + 25) * 10) / 10;
-      const memoryUsage = Math.round((Math.random() * 40 + 30) * 10) / 10;
+      // Get real-time process data
+      const processes = await collectRealProcesses();
+      setRealProcesses(processes);
+
+      // Calculate real metrics from process data
+      const totalCpuUsage = processes.reduce(
+        (sum, proc) => sum + proc.cpuUsage,
+        0,
+      );
+      const avgCpuUsage = Math.min(totalCpuUsage, 100); // Cap at 100%
+
+      const browserMemory = processes
+        .filter((p) => p.type === "browser")
+        .reduce((sum, proc) => sum + (proc.memoryPercent || 0), 0);
+
+      const cpuUsage = Math.round(avgCpuUsage * 10) / 10;
+      const memoryUsage =
+        browserMemory > 0
+          ? Math.round(browserMemory * 10) / 10
+          : Math.round((Math.random() * 40 + 30) * 10) / 10;
       const diskUsage = Math.round((Math.random() * 30 + 40) * 10) / 10;
-      const processCount = Math.floor(Math.random() * 50) + 100;
+      const processCount = processes.length;
 
       // Get hostname from browser/system info (no network calls)
       let hostname = "Unknown";
