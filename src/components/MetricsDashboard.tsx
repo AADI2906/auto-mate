@@ -667,10 +667,27 @@ export const MetricsDashboard: React.FC = () => {
                       const data = payload[0].payload;
                       return (
                         <div className="bg-card/95 backdrop-blur border border-border rounded-lg p-3 shadow-lg">
-                          <p className="text-sm font-medium">{data.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {data.value.toFixed(2)}% CPU usage
+                          <p className="text-sm font-medium">
+                            {data.fullName || data.name}
                           </p>
+                          <p className="text-sm text-muted-foreground">
+                            CPU: {data.value.toFixed(1)}%
+                          </p>
+                          {data.memory && (
+                            <p className="text-sm text-muted-foreground">
+                              Memory: {data.memory.toFixed(1)} MB
+                            </p>
+                          )}
+                          {data.pid && (
+                            <p className="text-sm text-muted-foreground">
+                              PID: {data.pid}
+                            </p>
+                          )}
+                          {data.status && (
+                            <p className="text-sm text-muted-foreground">
+                              Status: {data.status}
+                            </p>
+                          )}
                         </div>
                       );
                     }
