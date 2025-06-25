@@ -49,43 +49,33 @@ interface TimeSeriesData {
   timestamp: string;
   cpu: number;
   memory: number;
-  network: number;
-  threats: number;
-  latency: number;
+  disk: number;
+  processes: number;
 }
 
-interface ThreatDistribution {
+interface ProcessDistribution {
   name: string;
   value: number;
   color: string;
 }
 
-const generateTimeSeriesData = (): TimeSeriesData[] => {
-  const data: TimeSeriesData[] = [];
-  const now = new Date();
-
-  for (let i = 23; i >= 0; i--) {
-    const timestamp = new Date(now.getTime() - i * 60 * 60 * 1000);
-    data.push({
-      timestamp: timestamp.toISOString().slice(11, 16),
-      cpu: Math.floor(Math.random() * 40) + 30,
-      memory: Math.floor(Math.random() * 30) + 50,
-      network: Math.floor(Math.random() * 50) + 25,
-      threats: Math.floor(Math.random() * 10),
-      latency: Math.floor(Math.random() * 50) + 10,
-    });
-  }
-
-  return data;
+const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
 
-const threatDistribution: ThreatDistribution[] = [
-  { name: "Malware", value: 35, color: "#ef4444" },
-  { name: "Intrusion", value: 25, color: "#f59e0b" },
-  { name: "Data Exfiltration", value: 20, color: "#eab308" },
-  { name: "DDoS", value: 12, color: "#3b82f6" },
-  { name: "Phishing", value: 8, color: "#8b5cf6" },
-];
+const formatUptime = (seconds: number): string => {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+};
 
 const getMetricIcon = (change: number) => {
   if (change > 0) return TrendingUp;
