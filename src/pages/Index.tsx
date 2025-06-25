@@ -337,11 +337,6 @@ const Index = () => {
                 icon: Brain,
               },
               {
-                id: "metrics",
-                label: "Metrics",
-                icon: TrendingUp,
-              },
-              {
                 id: "system",
                 label: "System Monitor",
                 icon: Activity,
