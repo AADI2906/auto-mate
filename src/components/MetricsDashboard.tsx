@@ -246,6 +246,7 @@ export const MetricsDashboard: React.FC = () => {
       let cpuUsage = Math.random() * 50 + 25; // Fallback to simulated data
       let memoryUsage = Math.random() * 40 + 30;
       let hostname = "Unknown";
+      let internetSpeed = 0;
 
       try {
         // Try to get hostname - simple command that should work
@@ -255,6 +256,14 @@ export const MetricsDashboard: React.FC = () => {
         }
       } catch (e) {
         console.warn("Could not get hostname:", e);
+      }
+
+      // Test internet speed (run in background)
+      try {
+        internetSpeed = await testInternetSpeed();
+      } catch (e) {
+        console.warn("Could not test internet speed:", e);
+        internetSpeed = 0;
       }
 
       // Update basic metrics
