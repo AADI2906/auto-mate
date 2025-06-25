@@ -413,8 +413,8 @@ class RealSystemMetricsCollector {
 
       if (this.platform === "macos" || this.platform === "linux") {
         // Uptime
-        const uptimeResult = await executeCommand("uptime");
-        const uptimeMatch = uptimeResult.output.match(
+        const uptimeResult = await CommandExecutor.executeCommand("uptime");
+        const uptimeMatch = uptimeResult.output?.match(
           /up\s+(\d+)\s+days?,?\s*(\d+):(\d+)/,
         );
         if (uptimeMatch) {
@@ -425,7 +425,7 @@ class RealSystemMetricsCollector {
         }
 
         // Load average
-        const loadMatch = uptimeResult.output.match(
+        const loadMatch = uptimeResult.output?.match(
           /load averages?:\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/,
         );
         if (loadMatch) {
@@ -437,18 +437,18 @@ class RealSystemMetricsCollector {
         }
 
         // Hostname
-        const hostnameResult = await executeCommand("hostname");
-        hostname = hostnameResult.output.trim();
+        const hostnameResult = await CommandExecutor.executeCommand("hostname");
+        hostname = hostnameResult.output?.trim() || "unknown";
 
         // Kernel
-        const kernelResult = await executeCommand("uname -r");
-        kernel = kernelResult.output.trim();
+        const kernelResult = await CommandExecutor.executeCommand("uname -r");
+        kernel = kernelResult.output?.trim() || "unknown";
       } else if (this.platform === "windows") {
         // Uptime on Windows
-        const uptimeResult = await executeCommand(
+        const uptimeResult = await CommandExecutor.executeCommand(
           "wmic os get LastBootUpTime /value",
         );
-        const bootMatch = uptimeResult.output.match(/LastBootUpTime=(\d{14})/);
+        const bootMatch = uptimeResult.output?.match(/LastBootUpTime=(\d{14})/);
         if (bootMatch) {
           const bootTime = new Date(
             parseInt(bootMatch[1].substr(0, 4)),
@@ -462,12 +462,12 @@ class RealSystemMetricsCollector {
         }
 
         // Hostname
-        const hostnameResult = await executeCommand("hostname");
-        hostname = hostnameResult.output.trim();
+        const hostnameResult = await CommandExecutor.executeCommand("hostname");
+        hostname = hostnameResult.output?.trim() || "unknown";
 
         // Kernel version
-        const kernelResult = await executeCommand("ver");
-        kernel = kernelResult.output.trim();
+        const kernelResult = await CommandExecutor.executeCommand("ver");
+        kernel = kernelResult.output?.trim() || "unknown";
       }
 
       return {
