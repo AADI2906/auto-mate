@@ -26,7 +26,14 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
+  Server,
+  Memory,
+  Wifi,
 } from "lucide-react";
+import {
+  realSystemMetrics,
+  RealSystemMetrics,
+} from "@/services/RealSystemMetrics";
 
 interface Metric {
   id: string;
