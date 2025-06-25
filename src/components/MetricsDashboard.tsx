@@ -462,12 +462,15 @@ export const MetricsDashboard: React.FC = () => {
 
   useEffect(() => {
     // Initial collection
-    collectBasicMetrics();
+    const initialLoad = async () => {
+      await collectBasicMetrics();
+    };
+    initialLoad();
 
     // Set up interval for updates
-    const interval = setInterval(() => {
-      collectBasicMetrics();
-    }, 3000); // Update every 3 seconds
+    const interval = setInterval(async () => {
+      await collectBasicMetrics();
+    }, 5000); // Update every 5 seconds (slower for real data)
 
     return () => clearInterval(interval);
   }, []); // Empty dependency array - no infinite loops
