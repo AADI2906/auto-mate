@@ -259,7 +259,7 @@ export class LLMQueryProcessor {
   private static async callLocalLlama(query: string): Promise<any> {
     // Default Ollama/Llama endpoints - adjust port if needed
     const llamaEndpoints = [
-      'http://localhost:11434/api/generate',  // Ollama default
+      'http://ollama:11434/api/generate',  // Ollama default
       'http://localhost:8080/v1/chat/completions',  // llama.cpp server
       'http://localhost:5000/api/generate',  // Custom endpoint
     ];

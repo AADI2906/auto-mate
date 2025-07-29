@@ -1,0 +1,182 @@
+# # # # Use Docker Compose to build and run frontend and backend on a shared bridge network
+# # # version: '3.8'
+# # # services:
+# # #   automate-backend:
+# # #     build:
+# # #       context: ./backend
+# # #     image: automate-backend
+# # #     container_name: automate-backend
+# # #     ports:
+# # #       - "5001:5001"
+# # #     networks:
+# # #       - automate-net
+# # #     restart: always
+
+# # #   automate-front:
+# # #     build:
+# # #       context: .
+# # #       dockerfile: Dockerfile
+# # #     image: automate-frontend
+# # #     container_name: automate-frontend
+# # #     ports:
+# # #       - "5000:5000"
+# # #     depends_on:
+# # #       - automate-backend
+# # #     networks:
+# # #       - automate-net
+
+# # # networks:
+# # #   automate-net:
+# # #     driver: bridge
+
+
+# version: '3.9'
+
+# # services:
+# #   backend:
+# #     build:
+# #       context: ./backend
+# #       dockerfile: Dockerfile
+# #     container_name: backend-service
+# #     ports:
+# #       - "5000:5000"
+# #     networks:
+# #       - auto-mate-net
+# #     restart: unless-stopped
+
+# #   frontend:
+# #     build:
+# #       context: .
+# #       dockerfile: Dockerfile
+# #     container_name: frontend-service
+# #     ports:
+# #       - "3000:80"  # Access frontend via http://localhost:3000
+# #     depends_on:
+# #       - backend
+# #       - ollama:
+          
+# #     networks:
+# #       - auto-mate-net
+# #     restart: unless-stopped
+  
+# #   ollama:
+# #     image: ollama/ollama
+# #     container_name: ollama
+# #     ports:
+# #       - "11434:11434"
+# #     volumes:
+# #       - ollama_data:/root/.ollama
+# #     restart: unless-stopped
+# #     healthcheck:
+# #       test: ["CMD", "curl", "-f", "http://localhost:11434"]
+# #       interval: 10s
+# #       timeout: 5s
+# #       retries: 5
+# #     command: >
+# #       sh -c "ollama serve & sleep 5 && ollama pull llama3:8b && wait"
+
+# # volumes:
+# #   ollama_data:
+
+# # networks:
+# #   auto-mate-net:
+# #     driver: bridge
+
+
+
+# services:
+#   ollama:
+#     image: ollama/ollama
+#     ports:
+#       - "11434:11434"
+#     volumes:
+#       - ollama_data:/root/.ollama
+#     restart: unless-stopped
+#     healthcheck:
+#       test: ["CMD", "curl", "-f", "http://localhost:11434"]
+#       interval: 5s
+#       timeout: 3s
+#       retries: 10
+#     command: >
+#       sh -c "ollama serve & sleep 5 && ollama pull llama3.1:8b && wait"
+
+#   backend:
+#     build:
+#       context: ./backend
+#     depends_on:
+#       ollama:
+#         condition: service_healthy
+#     ports:
+#       - "5000:5000"
+#     networks:
+#       - default
+
+#   frontend:
+#     build:
+#       context: .
+#     ports:
+#       - "3000:80"
+#     depends_on:
+#       - backend
+
+# volumes:
+#   ollama_data:
+
+# networks:
+#   default:
+
+#     driver: bridge
+
+
+
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - ollama
+    networks:
+      - app-net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - ollama
+        
+    networks:
+      - app-net
+
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    command: ["ollama", "run", "llama3.1:8b"]
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: bridge
+
+volumes:
+  ollama_data:
